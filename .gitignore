@@ -5,3 +5,4 @@
 .venv
 params.yml
 
+.terraform/
