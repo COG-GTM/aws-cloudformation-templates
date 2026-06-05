@@ -13,8 +13,13 @@ data "aws_ssm_parameter" "latest_ami" {
   name = var.ami_ssm_parameter
 }
 
+data "aws_subnet" "selected" {
+  id = var.subnet_ids[0]
+}
+
 resource "aws_security_group" "instance_sg" {
   description = "Enable SSH access via port 22"
+  vpc_id      = data.aws_subnet.selected.vpc_id
 
   ingress {
     protocol    = "tcp"
