@@ -1,25 +1,25 @@
 # Cloud Security Assessment Report
 
-Infrastructure-as-code baseline: CloudFormation templates in this repository at commit `e525758a531e79b812f19bf87b9f55f4a9989326` (branch `devin/1789423490-cloud-security-assessment`), assessed 2026-09-14 22:41 UTC. The templates were last changed in commit `a0f43bc6d20813052892546f445037cf84c75b54`; later commits on this branch do not change any assessed template. Prepared in the form of CDRL A008, Cloud Security Assessment Report, for the Government and the system owner.
+Infrastructure-as-code baseline: CloudFormation templates in this repository at commit `d41ba46e7bb7818ebc1d3c73ad8e664d0eb0c860` (branch `devin/1789423490-cloud-security-assessment`), assessed 2026-09-14 23:08 UTC. The templates were last changed in commit `a0f43bc6d20813052892546f445037cf84c75b54`; later commits on this branch do not change any assessed template. Prepared in the form of CDRL A008, Cloud Security Assessment Report, for the Government and the system owner.
 
 ## 1. Executive summary
 
-This assessment treats the 158 CloudFormation templates in the repository as the infrastructure-as-code baseline for a set of Government cloud workloads. 3 open-source scanners (Checkov 3.3.17, cfn_nag 0.8.10, cfn-lint 1.56.3) and a custom rule pack of 55 checks were run against every template. Checkov did not process 7 template(s) (listed in the Method sheet); cfn_nag did not process 3 template(s) (listed in the Method sheet); cfn-lint did not process 2 template(s) (listed in the Method sheet). Each result was normalized into one schema, mapped to NIST SP 800-53 Rev. 5 controls, the CIS AWS Foundations Benchmark v3.0 where a recommendation exists, and a DoD Cloud Computing SRG topic area, and assigned a DISA-style severity (CAT I, CAT II, CAT III) with a one-line justification.
+This assessment treats the 158 CloudFormation templates in the repository as the infrastructure-as-code baseline for a set of Government cloud workloads. 3 open-source scanners (Checkov 3.3.17, cfn_nag 0.8.10, cfn-lint 1.56.3) and a custom rule pack of 55 checks were run against the 158 templates. Checkov did not process 7 template(s); cfn_nag did not process 10 template(s); cfn-lint did not process 2 template(s) (listed in the Method sheet); those templates are covered by the custom rule pack and the remaining scanners only. cfn-lint deliberately excluded 29 template(s) under the repository's lint conventions (scripts/lint-single.sh). Each result was normalized into one schema, mapped to NIST SP 800-53 Rev. 5 controls, the CIS AWS Foundations Benchmark v3.0 where a recommendation exists, and a DoD Cloud Computing SRG topic area, and assigned a DISA-style severity (CAT I, CAT II, CAT III) with a one-line justification.
 
-The scan produced 1174 findings in 148 of 158 templates. 1156 findings are open, 0 are marked Remediated in PR, and 18 are recommended for risk acceptance.
+The scan produced 1149 findings in 147 of 158 templates. 1131 findings are open, 0 are marked Remediated in PR, and 18 are recommended for risk acceptance.
 
 | Severity | Open | Remediated in PR | Risk acceptance recommended | All findings |
 |---|---|---|---|---|
 | CAT I | 9 | 0 | 0 | 9 |
-| CAT II | 370 | 0 | 0 | 370 |
-| CAT III | 777 | 0 | 18 | 795 |
-| Total | 1156 | 0 | 18 | 1174 |
+| CAT II | 352 | 0 | 0 | 352 |
+| CAT III | 770 | 0 | 18 | 788 |
+| Total | 1131 | 0 | 18 | 1149 |
 
 Key results:
 
 - 9 open CAT I findings: security group allows unrestricted ingress to administrative ports (4); security group allows unrestricted ingress on all ports and protocols (4); database storage is not encrypted at rest (1). They head the risk-ranked list in section 3 and are the first remediation targets.
-- 370 open CAT II findings, dominated by: eC2 instance does not require IMDSv2 (HttpTokens: required) (60); s3 bucket does not deny non-TLS (aws:SecureTransport=false) requests (40); eC2 Subnet should not have MapPublicIpOnLaunch set to true (cfn_nag W33) (26); security group admin-port ingress defaults to an unrestricted CIDR parameter (25).
-- 777 open CAT III findings, dominated by: iAM role has no permissions boundary (87); missing egress rule means all traffic is allowed outbound.  Make this explicit if it is desired configuration (cfn_nag F1000) (62); ensure every security groups rule has a description (checkov CKV_AWS_23) (59); iAM role uses inline policies (55).
+- 352 open CAT II findings, dominated by: eC2 instance does not require IMDSv2 (HttpTokens: required) (60); eC2 Subnet should not have MapPublicIpOnLaunch set to true (cfn_nag W33) (26); security group admin-port ingress defaults to an unrestricted CIDR parameter (25); s3 bucket does not deny non-TLS (aws:SecureTransport=false) requests (22).
+- 770 open CAT III findings, dominated by: iAM role has no permissions boundary (87); missing egress rule means all traffic is allowed outbound.  Make this explicit if it is desired configuration (cfn_nag F1000) (62); ensure every security groups rule has a description (checkov CKV_AWS_23) (59); iAM role uses inline policies (55).
 - The dominant systemic pattern is the absence of secure defaults. The same weakness recurs across service directories because each template was written independently; section 5 quantifies this and section 6 recommends automation that prevents it.
 - No Terraform sources exist in this revision, so the Terraform portion of the tasking is not applicable. The runner scans `.tf` files automatically when they are added.
 
@@ -28,7 +28,7 @@ Key results:
 ### 2.1 Scope
 
 - 158 CloudFormation templates (`.yaml`, `.yml`, `.json`, `.template` files with a `Resources` section) across 26 service directories with open findings. 21 candidate files were skipped because they are not CloudFormation templates (for example Lambda source, policy fragments, configuration files).
-- 136 JSON templates are generated twins of a YAML source in the same directory. YAML is the source of truth in this repository, so twins are not assessed separately (that would double every finding); each twin is compared with its source and drift is reported as finding `CSA-CFG-002`. Use `--include-generated-json` to assess twins as independent templates.
+- 136 JSON templates are generated twins of a YAML source in the same directory. YAML is the source of truth in this repository, so twins are not assessed separately (that would double every finding); each twin is compared with its source and drift is reported as finding `CSA-CFG-002`. Use `--include-generated-json` to assess twins as independent templates. Every twin was compared with its source.
 - Terraform: 0 `.tf` files found. Not applicable to this revision.
 - Static analysis only. No deployed-account evidence (AWS Config, Security Hub, CloudTrail) was available or used. Parameter values are evaluated from their template defaults.
 
@@ -37,14 +37,14 @@ Key results:
 | Tool | Version | Status | Raw results | Note |
 |---|---|---|---|---|
 | checkov | 3.3.17 | ran | 478 | 7 template(s) could not be parsed by checkov and were covered by the custom rule pack only: CloudFormation/StackSets/common-resources.yaml, RainModules/bucket.yml, RainModules/static-site.yml, Solutions/GitLab/GitLabServ… |
-| cfn_nag | 0.8.10 | ran | 525 | 3 template(s) could not be parsed by cfn_nag: CloudFormation/MacrosExamples/Boto3/example.yaml, CloudFormation/StackSets/common-resources.yaml, RainModules/bucket.yml |
+| cfn_nag | 0.8.10 | ran | 518 | 10 template(s) could not be parsed by cfn_nag: CloudFormation/MacrosExamples/Boto3/example.yaml, CloudFormation/MacrosExamples/ExecutionRoleBuilder/example.yaml, CloudFormation/StackSets/common-resources.yaml, ECS/ECS_Sc… |
 | cfn-lint | cfn-lint 1.56.3 | ran | 14 | 56 warning/informational messages not treated as findings; 29 template(s) not linted per the repository lint convention (macro examples and Rain module fragments): CloudFormation/MacrosExamples/Boto3/example.yaml, CloudF… |
 
 The custom rule pack (`scripts/cloud_security_assessment.py`, rule IDs `CSA-*`) adds 55 checks for conditions the scanners miss or that the Government baseline emphasizes: encryption at rest for every storage, database, queue, topic, stream and log resource; customer-managed versus AWS-managed KMS keys; TLS enforcement in transit; public exposure; logging and monitoring; IAM least privilege; IMDSv2; secrets handling; backup, retention and deletion protection.
 
 ### 2.3 Normalization, severity and ranking
 
-- Every result carries file and line evidence, at least one NIST SP 800-53 Rev. 5 control, a DoD Cloud Computing SRG area, tool and rule IDs, a recommended remediation and a disposition. 679 findings come from the custom rule pack (of which many are corroborated by Checkov or cfn_nag on the same resource) and 495 are tool-only findings.
+- Every result carries file and line evidence, at least one NIST SP 800-53 Rev. 5 control, a DoD Cloud Computing SRG area, tool and rule IDs, a recommended remediation and a disposition. 661 findings come from the custom rule pack (of which many are corroborated by Checkov or cfn_nag on the same resource) and 488 are tool-only findings.
 - CAT I (direct and immediate loss of confidentiality, integrity or availability) is assigned only when the custom rule pack verified the exact condition on the parsed template. Tool-only results that depend on pattern heuristics are capped at CAT II. A cfn_nag result that repeats an equivalent Checkov check on the same resource is merged so a weakness is counted once.
 - Risk rank 1 is the highest risk. The score is the severity base (CAT I 300, CAT II 200, CAT III 100) plus modifiers for Internet exposure, credential material, data stores, corroborating tools and core service directories. Open findings rank ahead of closed ones.
 - CIS AWS Foundations Benchmark v3.0.0 IDs are cited only where the AWS Security Hub CIS v3.0.0 control mapping confirms a matching recommendation. No IAM benchmark IDs are cited for template-level IAM findings because the benchmark's IAM section addresses account-level settings.
@@ -55,14 +55,14 @@ The full list is in `Cloud-Security-Findings-Tracker.xlsx` (sheet `Findings`) an
 
 | # | Finding | Evidence (template:line, resource) and traceability |
 |---|---|---|
-| 1 | CAT I — CSA-NET-001-DB6129: Security group allows unrestricted ingress to administrative ports | Solutions/CloudFormationEndpointSignals/cfn-endpoint-creationpolicy.yaml:242 `BastionSG`. NIST SC-7, SC-7(5), AC-17; CIS 5.2; CSA-NET-001; CKV_AWS_24; W9; W2 |
-| 2 | CAT I — CSA-NET-001-96174D: Security group allows unrestricted ingress to administrative ports | Solutions/CloudFormationEndpointSignals/cfn-endpoint-waitcondition.yaml:264 `BastionSG`. NIST SC-7, SC-7(5), AC-17; CIS 5.2; CSA-NET-001; CKV_AWS_24; W9; W2 |
-| 3 | CAT I — CSA-NET-001-EAB626: Security group allows unrestricted ingress to administrative ports | Solutions/EC2DomainJoin/EC2-Domain-Join.yaml:170 `InstanceSecurityGroup`. NIST SC-7, SC-7(5), AC-17; CIS 5.2; CSA-NET-001; CKV_AWS_25; W9; W2 |
-| 4 | CAT I — CSA-NET-001-9E1C81: Security group allows unrestricted ingress to administrative ports | EFS/efs_with_automount_to_ec2.yaml:313 `InstanceSecurityGroup`. NIST SC-7, SC-7(5), AC-17; CIS 5.2; CSA-NET-001; CKV_AWS_24; W9; W2 |
-| 5 | CAT I — CSA-NET-003-F362F5: Security group allows unrestricted ingress on all ports and protocols | ECS/EC2LaunchType/clusters/private-vpc.yaml:455 `PublicLoadBalancerSG`. NIST SC-7, SC-7(5), CM-7; CIS n/a; CSA-NET-003; W42; W9; W2 |
-| 6 | CAT I — CSA-NET-003-BF62E5: Security group allows unrestricted ingress on all ports and protocols | ECS/EC2LaunchType/clusters/public-vpc.yaml:323 `PublicLoadBalancerSG`. NIST SC-7, SC-7(5), CM-7; CIS n/a; CSA-NET-003; W42; W9; W2 |
-| 7 | CAT I — CSA-NET-003-048FBF: Security group allows unrestricted ingress on all ports and protocols | ECS/FargateLaunchType/clusters/private-vpc.yaml:293 `PublicLoadBalancerSG`. NIST SC-7, SC-7(5), CM-7; CIS n/a; CSA-NET-003; W42; W9; W2 |
-| 8 | CAT I — CSA-NET-003-3A5EFB: Security group allows unrestricted ingress on all ports and protocols | ECS/FargateLaunchType/clusters/public-vpc.yaml:159 `PublicLoadBalancerSG`. NIST SC-7, SC-7(5), CM-7; CIS n/a; CSA-NET-003; W42; W9; W2 |
+| 1 | CAT I — CSA-NET-001-DB6129-0C0E: Security group allows unrestricted ingress to administrative ports | Solutions/CloudFormationEndpointSignals/cfn-endpoint-creationpolicy.yaml:242 `BastionSG`. NIST SC-7, SC-7(5), AC-17; CIS 5.2; CSA-NET-001; CKV_AWS_24; W9; W2 |
+| 2 | CAT I — CSA-NET-001-96174D-0C0E: Security group allows unrestricted ingress to administrative ports | Solutions/CloudFormationEndpointSignals/cfn-endpoint-waitcondition.yaml:264 `BastionSG`. NIST SC-7, SC-7(5), AC-17; CIS 5.2; CSA-NET-001; CKV_AWS_24; W9; W2 |
+| 3 | CAT I — CSA-NET-001-EAB626-8C16: Security group allows unrestricted ingress to administrative ports | Solutions/EC2DomainJoin/EC2-Domain-Join.yaml:170 `InstanceSecurityGroup`. NIST SC-7, SC-7(5), AC-17; CIS 5.2; CSA-NET-001; CKV_AWS_25; W9; W2 |
+| 4 | CAT I — CSA-NET-001-9E1C81-0C0E: Security group allows unrestricted ingress to administrative ports | EFS/efs_with_automount_to_ec2.yaml:313 `InstanceSecurityGroup`. NIST SC-7, SC-7(5), AC-17; CIS 5.2; CSA-NET-001; CKV_AWS_24; W9; W2 |
+| 5 | CAT I — CSA-NET-003-F362F5-016A: Security group allows unrestricted ingress on all ports and protocols | ECS/EC2LaunchType/clusters/private-vpc.yaml:455 `PublicLoadBalancerSG`. NIST SC-7, SC-7(5), CM-7; CIS n/a; CSA-NET-003; W42; W9; W2 |
+| 6 | CAT I — CSA-NET-003-BF62E5-016A: Security group allows unrestricted ingress on all ports and protocols | ECS/EC2LaunchType/clusters/public-vpc.yaml:323 `PublicLoadBalancerSG`. NIST SC-7, SC-7(5), CM-7; CIS n/a; CSA-NET-003; W42; W9; W2 |
+| 7 | CAT I — CSA-NET-003-048FBF-016A: Security group allows unrestricted ingress on all ports and protocols | ECS/FargateLaunchType/clusters/private-vpc.yaml:293 `PublicLoadBalancerSG`. NIST SC-7, SC-7(5), CM-7; CIS n/a; CSA-NET-003; W42; W9; W2 |
+| 8 | CAT I — CSA-NET-003-3A5EFB-016A: Security group allows unrestricted ingress on all ports and protocols | ECS/FargateLaunchType/clusters/public-vpc.yaml:159 `PublicLoadBalancerSG`. NIST SC-7, SC-7(5), CM-7; CIS n/a; CSA-NET-003; W42; W9; W2 |
 | 9 | CAT I — CSA-ENC-003-C5F9F7: Database storage is not encrypted at rest | NeptuneDB/Neptune.yaml:311 `NeptuneDBCluster`. NIST SC-28, SC-28(1); CIS n/a; CSA-ENC-003; CKV_AWS_44 |
 | 10 | CAT II — CSA-NET-007-5B39EA: S3 bucket does not block public access | CloudFormation/MacrosExamples/Count/test.yaml:16 `BucketToCopyA`. NIST AC-3, SC-7, CM-6; CIS 2.1.4; CSA-NET-007; CKV_AWS_55; CKV_AWS_53; CKV_AWS_56; CKV_AWS_54 |
 | 11 | CAT II — CSA-NET-007-C22030: S3 bucket does not block public access | CloudFormation/MacrosExamples/Count/test.yaml:35 `BucketToCopyB`. NIST AC-3, SC-7, CM-6; CIS 2.1.4; CSA-NET-007; CKV_AWS_55; CKV_AWS_53; CKV_AWS_56; CKV_AWS_54 |
@@ -78,14 +78,14 @@ The full list is in `Cloud-Security-Findings-Tracker.xlsx` (sheet `Findings`) an
 
 Evidence detail for the open CAT I findings:
 
-- **CSA-NET-001-DB6129** (rank 1) — `Solutions/CloudFormationEndpointSignals/cfn-endpoint-creationpolicy.yaml:242 — ports 22-22/tcp from 0.0.0.0/0`. Snippet: `- IpProtocol: tcp`. Direct and immediate loss of confidentiality, integrity or availability (DISA CAT I). Remediation: Replace the open CIDR with a parameterized Government CIDR (AllowedPattern that rejects /0), or remove the rule and use Systems Manager Session Manager / a bastion behind the CAP.
-- **CSA-NET-001-96174D** (rank 2) — `Solutions/CloudFormationEndpointSignals/cfn-endpoint-waitcondition.yaml:264 — ports 22-22/tcp from 0.0.0.0/0`. Snippet: `- IpProtocol: tcp`. Direct and immediate loss of confidentiality, integrity or availability (DISA CAT I). Remediation: Replace the open CIDR with a parameterized Government CIDR (AllowedPattern that rejects /0), or remove the rule and use Systems Manager Session Manager / a bastion behind the CAP.
-- **CSA-NET-001-EAB626** (rank 3) — `Solutions/EC2DomainJoin/EC2-Domain-Join.yaml:170 — ports 3389-3389/tcp from 0.0.0.0/0`. Snippet: `- IpProtocol: tcp`. Direct and immediate loss of confidentiality, integrity or availability (DISA CAT I). Remediation: Replace the open CIDR with a parameterized Government CIDR (AllowedPattern that rejects /0), or remove the rule and use Systems Manager Session Manager / a bastion behind the CAP.
-- **CSA-NET-001-9E1C81** (rank 4) — `EFS/efs_with_automount_to_ec2.yaml:313 — ports 22-22/tcp from 0.0.0.0/0`. Snippet: `- CidrIp: 0.0.0.0/0`. Direct and immediate loss of confidentiality, integrity or availability (DISA CAT I). Remediation: Replace the open CIDR with a parameterized Government CIDR (AllowedPattern that rejects /0), or remove the rule and use Systems Manager Session Manager / a bastion behind the CAP.
-- **CSA-NET-003-F362F5** (rank 5) — `ECS/EC2LaunchType/clusters/private-vpc.yaml:455 — IpProtocol=-1 ports None-None from 0.0.0.0/0`. Snippet: `- CidrIp: 0.0.0.0/0`. Direct and immediate loss of confidentiality, integrity or availability (DISA CAT I). Remediation: Restrict the rule to the required protocol and ports and to a known source security group or Government CIDR.
-- **CSA-NET-003-BF62E5** (rank 6) — `ECS/EC2LaunchType/clusters/public-vpc.yaml:323 — IpProtocol=-1 ports None-None from 0.0.0.0/0`. Snippet: `- CidrIp: 0.0.0.0/0`. Direct and immediate loss of confidentiality, integrity or availability (DISA CAT I). Remediation: Restrict the rule to the required protocol and ports and to a known source security group or Government CIDR.
-- **CSA-NET-003-048FBF** (rank 7) — `ECS/FargateLaunchType/clusters/private-vpc.yaml:293 — IpProtocol=-1 ports None-None from 0.0.0.0/0`. Snippet: `- CidrIp: 0.0.0.0/0`. Direct and immediate loss of confidentiality, integrity or availability (DISA CAT I). Remediation: Restrict the rule to the required protocol and ports and to a known source security group or Government CIDR.
-- **CSA-NET-003-3A5EFB** (rank 8) — `ECS/FargateLaunchType/clusters/public-vpc.yaml:159 — IpProtocol=-1 ports None-None from 0.0.0.0/0`. Snippet: `- CidrIp: 0.0.0.0/0`. Direct and immediate loss of confidentiality, integrity or availability (DISA CAT I). Remediation: Restrict the rule to the required protocol and ports and to a known source security group or Government CIDR.
+- **CSA-NET-001-DB6129-0C0E** (rank 1) — `Solutions/CloudFormationEndpointSignals/cfn-endpoint-creationpolicy.yaml:242 — ports 22-22/tcp from 0.0.0.0/0`. Snippet: `- IpProtocol: tcp`. Direct and immediate loss of confidentiality, integrity or availability (DISA CAT I). Remediation: Replace the open CIDR with a parameterized Government CIDR (AllowedPattern that rejects /0), or remove the rule and use Systems Manager Session Manager / a bastion behind the CAP.
+- **CSA-NET-001-96174D-0C0E** (rank 2) — `Solutions/CloudFormationEndpointSignals/cfn-endpoint-waitcondition.yaml:264 — ports 22-22/tcp from 0.0.0.0/0`. Snippet: `- IpProtocol: tcp`. Direct and immediate loss of confidentiality, integrity or availability (DISA CAT I). Remediation: Replace the open CIDR with a parameterized Government CIDR (AllowedPattern that rejects /0), or remove the rule and use Systems Manager Session Manager / a bastion behind the CAP.
+- **CSA-NET-001-EAB626-8C16** (rank 3) — `Solutions/EC2DomainJoin/EC2-Domain-Join.yaml:170 — ports 3389-3389/tcp from 0.0.0.0/0`. Snippet: `- IpProtocol: tcp`. Direct and immediate loss of confidentiality, integrity or availability (DISA CAT I). Remediation: Replace the open CIDR with a parameterized Government CIDR (AllowedPattern that rejects /0), or remove the rule and use Systems Manager Session Manager / a bastion behind the CAP.
+- **CSA-NET-001-9E1C81-0C0E** (rank 4) — `EFS/efs_with_automount_to_ec2.yaml:313 — ports 22-22/tcp from 0.0.0.0/0`. Snippet: `- CidrIp: 0.0.0.0/0`. Direct and immediate loss of confidentiality, integrity or availability (DISA CAT I). Remediation: Replace the open CIDR with a parameterized Government CIDR (AllowedPattern that rejects /0), or remove the rule and use Systems Manager Session Manager / a bastion behind the CAP.
+- **CSA-NET-003-F362F5-016A** (rank 5) — `ECS/EC2LaunchType/clusters/private-vpc.yaml:455 — IpProtocol=-1 ports None-None from 0.0.0.0/0`. Snippet: `- CidrIp: 0.0.0.0/0`. Direct and immediate loss of confidentiality, integrity or availability (DISA CAT I). Remediation: Restrict the rule to the required protocol and ports and to a known source security group or Government CIDR.
+- **CSA-NET-003-BF62E5-016A** (rank 6) — `ECS/EC2LaunchType/clusters/public-vpc.yaml:323 — IpProtocol=-1 ports None-None from 0.0.0.0/0`. Snippet: `- CidrIp: 0.0.0.0/0`. Direct and immediate loss of confidentiality, integrity or availability (DISA CAT I). Remediation: Restrict the rule to the required protocol and ports and to a known source security group or Government CIDR.
+- **CSA-NET-003-048FBF-016A** (rank 7) — `ECS/FargateLaunchType/clusters/private-vpc.yaml:293 — IpProtocol=-1 ports None-None from 0.0.0.0/0`. Snippet: `- CidrIp: 0.0.0.0/0`. Direct and immediate loss of confidentiality, integrity or availability (DISA CAT I). Remediation: Restrict the rule to the required protocol and ports and to a known source security group or Government CIDR.
+- **CSA-NET-003-3A5EFB-016A** (rank 8) — `ECS/FargateLaunchType/clusters/public-vpc.yaml:159 — IpProtocol=-1 ports None-None from 0.0.0.0/0`. Snippet: `- CidrIp: 0.0.0.0/0`. Direct and immediate loss of confidentiality, integrity or availability (DISA CAT I). Remediation: Restrict the rule to the required protocol and ports and to a known source security group or Government CIDR.
 - **CSA-ENC-003-C5F9F7** (rank 9) — `NeptuneDB/Neptune.yaml:311 — Properties.StorageEncrypted resolves to [False]`. Snippet: `StorageEncrypted: !Ref StorageEncrypted`. Direct and immediate loss of confidentiality, integrity or availability (DISA CAT I). Remediation: Set StorageEncrypted: true (Encrypted: true for Redshift) and supply KmsKeyId with a customer-managed key. Encryption is set at creation; existing instances need a snapshot-copy migration.
 
 ## 4. Findings by NIST SP 800-53 Rev. 5 control family
@@ -94,8 +94,8 @@ A finding that maps to controls in two families is counted in both. Counts are o
 
 | Control family | Open | CAT I | CAT II | CAT III | Most-cited controls (count) |
 |---|---|---|---|---|---|
-| System and Communications Protection | 499 | 9 | 267 | 223 | SC-7 (314), SC-28(1) (103), SC-8(1) (103), SC-8 (83), SC-28 (66), SC-7(5) (51) |
-| Configuration Management | 475 | 4 | 86 | 385 | CM-6 (326), CM-5 (138), CM-2 (35), CM-3 (15), CM-7 (11) |
+| System and Communications Protection | 481 | 9 | 249 | 223 | SC-7 (314), SC-28(1) (103), SC-8(1) (85), SC-28 (66), SC-8 (65), SC-7(5) (51) |
+| Configuration Management | 468 | 4 | 86 | 378 | CM-6 (319), CM-5 (138), CM-2 (28), CM-3 (15), CM-7 (11) |
 | Access Control | 381 | 4 | 179 | 198 | AC-6 (294), AC-6(1) (129), AC-3 (87), AC-4 (36), AC-17 (35) |
 | Audit and Accountability | 132 | 0 | 20 | 112 | AU-12 (129), AU-2 (91), AU-11 (2), AU-9 (1) |
 | Contingency Planning | 78 | 0 | 4 | 74 | CP-9 (78), CP-10 (27) |
@@ -106,7 +106,7 @@ Control coverage (open findings per control and templates with at least one find
 
 | Control | Title | Open findings | Templates with findings / assessed |
 |---|---|---|---|
-| CM-6 | Configuration Settings | 326 | 124 / 158 |
+| CM-6 | Configuration Settings | 319 | 122 / 158 |
 | AC-6 | Least Privilege | 294 | 101 / 158 |
 | SC-7 | Boundary Protection | 314 | 92 / 158 |
 | AU-12 | Audit Record Generation | 129 | 78 / 158 |
@@ -114,7 +114,7 @@ Control coverage (open findings per control and templates with at least one find
 | AU-2 | Event Logging | 91 | 62 / 158 |
 | AC-6(1) | Least Privilege / Authorize Access to Security Functions | 129 | 59 / 158 |
 | SC-28(1) | Protection of Information at Rest / Cryptographic Protection | 103 | 59 / 158 |
-| SC-8(1) | Transmission Confidentiality and Integrity / Cryptographic Protection | 103 | 58 / 158 |
+| SC-8(1) | Transmission Confidentiality and Integrity / Cryptographic Protection | 85 | 56 / 158 |
 | SI-4 | System Monitoring | 70 | 50 / 158 |
 
 ## 5. Systemic patterns
@@ -124,7 +124,7 @@ The counts below compare open rule hits with the number of resources of the rele
 | Pattern | Affected resources (open) | Share | Rule |
 |---|---|---|---|
 | S3 buckets without declared server-side encryption | 13 of 43 | 30% | CSA-ENC-001 |
-| S3 buckets without an aws:SecureTransport deny policy | 40 of 43 | 93% | CSA-TLS-001 |
+| S3 buckets without an aws:SecureTransport deny policy | 22 of 43 | 51% | CSA-TLS-001 |
 | S3 buckets without a Public Access Block | 13 of 43 | 30% | CSA-NET-007 |
 | S3 buckets without server access logging | 35 of 43 | 81% | CSA-LOG-001 |
 | EC2 instances, launch templates and launch configurations without IMDSv2 required | 60 of 60 | 100% | CSA-CFG-001 |
@@ -171,7 +171,7 @@ PR 2 fixes the ten highest-ranked open findings (9 CAT I, 1 CAT II; 9 CAT I find
 
 ### 8.2 Open for Government disposition
 
-- 9 CAT I, 370 CAT II and 777 CAT III findings remain open. Sheet `POAM-Draft` lists every open CAT I and CAT II finding in POA&M layout with an owner role, milestones and a scheduled-completion placeholder.
+- 9 CAT I, 352 CAT II and 770 CAT III findings remain open. Sheet `POAM-Draft` lists every open CAT I and CAT II finding in POA&M layout with an owner role, milestones and a scheduled-completion placeholder.
 - 18 findings are recommended for risk acceptance: 18 × Security group allows unrestricted ingress on an application port (`CSA-NET-004`, CAT III). Each carries a disposition note in the tracker. The system owner must confirm each acceptance and record it.
 - Suggested schedule from Government acceptance of this report: CAT I 30 days, CAT II 90 days, CAT III 180 days, consistent with the target-date placeholders in the tracker.
 
@@ -209,7 +209,7 @@ One row per custom rule. Tool IDs are the Checkov and cfn_nag checks merged into
 | CSA-ENC-012 (CAT II, 1) | Cache or search domain is not encrypted at rest | SC-28, SC-28(1) / CIS n/a | encryption_rest; CKV_AWS_247, CKV_AWS_29, CKV_AWS_31, CKV_AWS_5, F25, F33 |
 | CSA-KMS-001 (CAT III, 7) | Encrypted resource relies on an AWS-managed key instead of a customer-managed key | SC-12, SC-28(1) / CIS n/a | encryption_rest; no tool overlap |
 | CSA-KMS-002 (CAT III, 2) | KMS key does not enable automatic rotation | SC-12 / CIS 3.6 | encryption_rest; CKV_AWS_7 |
-| CSA-TLS-001 (CAT II, 40) | S3 bucket does not deny non-TLS (aws:SecureTransport=false) requests | SC-8, SC-8(1) / CIS 2.1.1 | encryption_transit; no tool overlap |
+| CSA-TLS-001 (CAT II, 22) | S3 bucket does not deny non-TLS (aws:SecureTransport=false) requests | SC-8, SC-8(1) / CIS 2.1.1 | encryption_transit; no tool overlap |
 | CSA-TLS-002 (CAT II, 15) | Load balancer listener accepts clear-text traffic | SC-8, SC-8(1) / CIS n/a | encryption_transit; CKV_AWS_2, W56 |
 | CSA-TLS-003 (CAT II, 4) | HTTPS listener does not enforce a TLS 1.2+ security policy | SC-8(1), SC-13 / CIS n/a | encryption_transit; CKV_AWS_103, W55 |
 | CSA-TLS-004 (CAT II, 5) | RDS database does not enforce TLS connections (rds.force_ssl / require_secure_transport) | SC-8, SC-8(1) / CIS n/a | encryption_transit; no tool overlap |
@@ -285,7 +285,6 @@ Checkov, cfn_nag and cfn-lint results that did not merge into a custom rule, wit
 | CKV_AWS_173 (checkov, CAT III, 10) | Check encryption settings for Lambda environment variable (checkov CKV_AWS_173) | SC-28, SC-28(1), SC-8, SC-8(1) |
 | CKV_AWS_131 (checkov, CAT III, 9) | Ensure that ALB drops HTTP headers (checkov CKV_AWS_131) | CM-6 |
 | CKV_AWS_103 (checkov, CAT II, 7) | Ensure that Load Balancer Listener is using at least TLS v1.2 (checkov CKV_AWS_103) | SC-8(1), SC-13 |
-| FATAL (cfn_nag, CAT III, 7) | Unresolved logical resource ids: ["NetworkVPC", "NetworkPublicSubnet1"] (cfn_nag FATAL) | CM-2, CM-6 |
 | W42 (cfn_nag, CAT II, 7) | Security Groups ingress with an ipProtocol of -1 found  (cfn_nag W42) | SC-7, SC-7(5), CM-7 |
 | CKV_AWS_118 (checkov, CAT III, 6) | Ensure that enhanced monitoring is enabled for Amazon RDS instances (checkov CKV_AWS_118) | SI-4 |
 | CKV_AWS_157 (checkov, CAT III, 5) | Ensure that RDS instances have Multi-AZ enabled (checkov CKV_AWS_157) | CP-9, CP-10 |
@@ -302,6 +301,7 @@ Checkov, cfn_nag and cfn-lint results that did not merge into a custom rule, wit
 | W5 (cfn_nag, CAT III, 3) | Security Groups found with cidr open to world on egress (cfn_nag W5) | SC-7, SC-7(5) |
 | W58 (cfn_nag, CAT III, 3) | Lambda functions require permission to write CloudWatch Logs (cfn_nag W58) | AU-2, AU-12 |
 | CKV_AWS_120 (checkov, CAT III, 2) | Ensure API Gateway caching is enabled (checkov CKV_AWS_120) | CM-6 |
+| CKV_AWS_123 (checkov, CAT II, 2) | Ensure that VPC Endpoint Service is configured for Manual Acceptance (checkov CKV_AWS_123) | SC-7 |
 
 ## Appendix C. References
 

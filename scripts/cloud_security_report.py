@@ -113,12 +113,18 @@ def build(data: dict) -> str:
         v = t["version"]
         return v if v.lower().startswith(tool_names[t["name"]].lower()) else f"{tool_names[t['name']]} {v}"
 
-    scanner_sentence = (f"{len(ran)} open-source scanner{'s' if len(ran) != 1 else ''} ({', '.join(tool_label(t) for t in ran)}) and a custom rule pack of {len(rules)} checks were run against every template."
-                        if ran else f"A custom rule pack of {len(rules)} checks was run against every template; no external scanner ran.")
+    complete = [t for t in ran if not t["unparsed"] and not t["excluded"]]
+    scanner_sentence = (f"{len(ran)} open-source scanner{'s' if len(ran) != 1 else ''} ({', '.join(tool_label(t) for t in ran)}) and a custom rule pack of {len(rules)} checks were run against the {n_templates} templates."
+                        if ran else f"A custom rule pack of {len(rules)} checks was run against the {n_templates} templates; no external scanner ran.")
     if not_ran:
         scanner_sentence += " " + "; ".join(f"{tool_names[t['name']]} was {t['status']} ({t['note']})" for t in not_ran) + "."
     if partial:
-        scanner_sentence += " " + "; ".join(f"{tool_names[t['name']]} did not process {len(t['unparsed'])} template(s) (listed in the Method sheet)" for t in partial) + "."
+        scanner_sentence += (" " + (", ".join(tool_names[t["name"]] for t in complete) + " processed every template; " if complete else "")
+                             + "; ".join(f"{tool_names[t['name']]} did not process {len(t['unparsed'])} template(s)" for t in partial)
+                             + " (listed in the Method sheet); those templates are covered by the custom rule pack and the remaining scanners only.")
+    excluded = [t for t in ran if t["excluded"]]
+    if excluded:
+        scanner_sentence += " " + "; ".join(f"{tool_names[t['name']]} deliberately excluded {len(t['excluded'])} template(s) under the repository's lint conventions (scripts/lint-single.sh)" for t in excluded) + "."
     if n_tf:
         tf_scope = (f"{n_tf} Terraform `.tf` file(s) were discovered and scanned with Checkov." if tools["checkov"]["status"] == "ran"
                     else f"{n_tf} Terraform `.tf` file(s) were discovered but not scanned because Checkov was {tools['checkov']['status']}.")
@@ -194,7 +200,9 @@ def build(data: dict) -> str:
     A(f"- {n_templates} CloudFormation templates (`.yaml`, `.yml`, `.json`, `.template` files with a `Resources` section) across {len(summary['open_by_service_directory'])} service directories with open findings. "
       f"{meta['skipped_files']} candidate files were skipped because they are not CloudFormation templates (for example Lambda source, policy fragments, configuration files).")
     A(f"- {len(twins)} JSON templates are generated twins of a YAML source in the same directory. YAML is the source of truth in this repository, so twins are not assessed separately (that would double every finding); "
-      f"each twin is compared with its source and drift is reported as finding `CSA-CFG-002`. Use `--include-generated-json` to assess twins as independent templates.")
+      f"each twin is compared with its source and drift is reported as finding `CSA-CFG-002`. Use `--include-generated-json` to assess twins as independent templates."
+      + (f" {len(meta.get('generated_json_not_compared', []))} twin(s) could not be compared because the twin or its source did not parse: "
+         + ", ".join(f"`{p}`" for p in meta["generated_json_not_compared"]) + "." if meta.get("generated_json_not_compared") else " Every twin was compared with its source."))
     A(f"- Terraform: {n_tf} `.tf` files found. " + ("Scanned with Checkov (Terraform framework); the custom rule pack is CloudFormation-only." if n_tf else "Not applicable to this revision."))
     A("- Static analysis only. No deployed-account evidence (AWS Config, Security Hub, CloudTrail) was available or used. Parameter values are evaluated from their template defaults.")
     A("")

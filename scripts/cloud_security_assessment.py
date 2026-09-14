@@ -298,6 +298,7 @@ class Hit:
     disposition: str | None = None
     title: str | None = None
     cis: str | None | object = _UNSET  # overrides the rule CIS ID (None clears it)
+    key: str | None = None  # identity of this hit within the resource for rules that can report one resource several times
 
 
 @dataclass
@@ -735,13 +736,24 @@ def r_kms_rotation(ctx: TemplateCtx):
 # ---- Encryption in transit ----------------------------------------------------------------
 
 
+def bucket_policy_targets(ctx: TemplateCtx, bucket_ref: Any) -> set[str]:
+    """Logical IDs of the buckets a BucketPolicy.Bucket expression can denote.
+
+    ``!Ref Bucket`` names the bucket directly. A literal or ``!Sub`` name matches every bucket whose ``BucketName``
+    is the same expression (after canonicalisation), so an explicitly named bucket and its policy are associated
+    the way CloudFormation associates them at deploy time. An expression that matches several buckets is
+    ambiguous and matches none."""
+    if isinstance(bucket_ref, dict) and isinstance(bucket_ref.get("Ref"), str):
+        lid = bucket_ref["Ref"]
+        return {lid} if lid in ctx.resources else set()
+    wanted = _canon(bucket_ref)
+    matches = {lid for lid, res in ctx.by_type(S3_BUCKET) if "BucketName" in props(res) and _canon(props(res)["BucketName"]) == wanted}
+    return matches if len(matches) == 1 else set()
+
+
 def bucket_policies_for(ctx: TemplateCtx, bucket_lid: str) -> list[tuple[str, dict]]:
-    out = []
-    for plid, pres in ctx.by_type("AWS::S3::BucketPolicy"):
-        b = props(pres).get("Bucket")
-        if isinstance(b, dict) and b.get("Ref") == bucket_lid:
-            out.append((plid, pres))
-    return out
+    return [(plid, pres) for plid, pres in ctx.by_type("AWS::S3::BucketPolicy")
+            if bucket_lid in bucket_policy_targets(ctx, props(pres).get("Bucket"))]
 
 
 def policy_denies_insecure_transport(doc: Any) -> bool:
@@ -979,6 +991,11 @@ def _ingress_hits(ctx: TemplateCtx, wanted: set[int] | None, all_ports_only: boo
         yield lid, rtype, r, line, cidr, param, f, t, proto
 
 
+def ingress_key(cidr: str, f: int | None, t: int | None, proto: str) -> str:
+    """Content-based identity of an ingress rule, independent of its position among sibling rules."""
+    return f"{cidr}|{f}-{t}/{proto}"
+
+
 def _ipv6_cis(cidr: str) -> str:
     return CIS["sg_admin_ipv6"] if cidr == "::/0" else CIS["sg_admin_ipv4"]
 
@@ -993,9 +1010,9 @@ def r_sg_admin(ctx: TemplateCtx):
     for lid, rtype, _r, line, cidr, param, f, t, proto in _ingress_hits(ctx, ADMIN_PORTS):
         if param:
             yield Hit(lid, rtype, line, f"ports {f}-{t}/{proto} from parameter {param} whose Default is {cidr}", severity=CAT_II,
-                      title="Security group admin-port ingress defaults to an unrestricted CIDR parameter")
+                      title="Security group admin-port ingress defaults to an unrestricted CIDR parameter", key=ingress_key(cidr, f, t, proto))
         else:
-            yield Hit(lid, rtype, line, f"ports {f}-{t}/{proto} from {cidr}")
+            yield Hit(lid, rtype, line, f"ports {f}-{t}/{proto} from {cidr}", key=ingress_key(cidr, f, t, proto))
 
 
 @rule(id="CSA-NET-002", title="Security group allows unrestricted ingress to database or cache ports",
@@ -1008,7 +1025,7 @@ def r_sg_db(ctx: TemplateCtx):
         if ports_covered(f, t, proto, ADMIN_PORTS):
             continue  # reported by CSA-NET-001
         detail = f"ports {f}-{t}/{proto} from {cidr}" + (f" (parameter {param} default)" if param else "")
-        yield Hit(lid, rtype, line, detail, severity=CAT_II if param else CAT_I)
+        yield Hit(lid, rtype, line, detail, severity=CAT_II if param else CAT_I, key=ingress_key(cidr, f, t, proto))
 
 
 @rule(id="CSA-NET-003", title="Security group allows unrestricted ingress on all ports and protocols",
@@ -1019,7 +1036,7 @@ def r_sg_db(ctx: TemplateCtx):
 def r_sg_all(ctx: TemplateCtx):
     for lid, rtype, _r, line, cidr, param, f, t, proto in _ingress_hits(ctx, None, all_ports_only=True):
         yield Hit(lid, rtype, line, f"IpProtocol={proto} ports {f}-{t} from {cidr}" + (f" (parameter {param} default)" if param else ""),
-                  severity=CAT_II if param else CAT_I)
+                  severity=CAT_II if param else CAT_I, key=ingress_key(cidr, f, t, proto))
 
 
 @rule(id="CSA-NET-004", title="Security group allows unrestricted ingress on an application port",
@@ -1037,7 +1054,7 @@ def r_sg_app(ctx: TemplateCtx):
             continue
         web = ports_covered(f, t, proto, WEB_PORTS) and f == t
         yield Hit(lid, rtype, line, f"ports {f}-{t}/{proto} from {cidr}" + (f" (parameter {param} default)" if param else ""),
-                  severity=CAT_III if web else CAT_II, disposition="Risk acceptance recommended" if web else None)
+                  severity=CAT_III if web else CAT_II, disposition="Risk acceptance recommended" if web else None, key=ingress_key(cidr, f, t, proto))
 
 
 @rule(id="CSA-NET-005", title="Database is publicly accessible",
@@ -1332,8 +1349,11 @@ READ_ONLY_PREFIXES = ("get", "list", "describe", "head", "lookup", "search", "qu
 IAM_PRINCIPAL_TYPES = ["AWS::IAM::Policy", "AWS::IAM::ManagedPolicy", "AWS::IAM::Role", "AWS::IAM::User", "AWS::IAM::Group"]
 
 
-def iter_policy_documents(ctx: TemplateCtx) -> Iterable[tuple[str, str, dict, int, str]]:
-    """Yield (logical_id, resource_type, statement, line, context) for identity-based policies."""
+def iter_policy_documents(ctx: TemplateCtx) -> Iterable[tuple[str, str, dict, int, str, str]]:
+    """Yield (logical_id, resource_type, statement, line, context, statement key) for identity-based policies.
+
+    The statement key is ``<context>.Statement[<Sid>]`` when the statement has a Sid, otherwise a digest of the
+    statement's Effect/Action/Resource, so the key does not move when sibling statements are added or removed."""
     for lid, res in ctx.resources.items():
         rtype = rtype_of(res)
         p = props(res)
@@ -1343,10 +1363,16 @@ def iter_policy_documents(ctx: TemplateCtx) -> Iterable[tuple[str, str, dict, in
         if rtype in {"AWS::IAM::Role", "AWS::IAM::User", "AWS::IAM::Group"}:
             for i, pol in enumerate(as_list(p.get("Policies"))):
                 if isinstance(pol, dict):
-                    docs.append((pol.get("PolicyDocument"), f"Policies[{i}]"))
+                    name = pol.get("PolicyName")
+                    docs.append((pol.get("PolicyDocument"), f"Policies[{name if isinstance(name, str) and name else i}]"))
         for doc, where in docs:
             for s in iter_statements(doc):
-                yield lid, rtype, s, node_line(s, ctx.resource_line(lid, res)), where
+                sid = s.get("Sid")
+                if not (isinstance(sid, str) and sid):
+                    body = json.dumps(_canon({k: s.get(k) for k in ("Effect", "Action", "NotAction", "Resource", "NotResource")}), sort_keys=True, default=str)
+                    sid = hashlib.sha1(body.encode()).hexdigest()[:8]
+                key = f"{where}.Statement[{sid}]"
+                yield lid, rtype, s, node_line(s, ctx.resource_line(lid, res)), where, key
 
 
 def is_read_only(actions: list[str]) -> bool:
@@ -1365,11 +1391,11 @@ def is_read_only(actions: list[str]) -> bool:
       description="An Allow statement uses Action \"*\" with Resource \"*\". The principal can perform any action on any resource in the account, including privilege escalation and log tampering.",
       remediation="Enumerate the required actions and scope Resource to specific ARNs; attach a permissions boundary to the role.")
 def r_iam_admin(ctx: TemplateCtx):
-    for lid, rtype, s, line, where in iter_policy_documents(ctx):
+    for lid, rtype, s, line, where, key in iter_policy_documents(ctx):
         if s.get("Effect") != "Allow":
             continue
         if "*" in stmt_actions(s) and any(r == "*" for r in stmt_resources(s)):
-            yield Hit(lid, rtype, line, f"{where}: Action * on Resource *")
+            yield Hit(lid, rtype, line, f"{where}: Action * on Resource *", key=key)
 
 
 @rule(id="CSA-IAM-002", title="IAM policy uses service-level wildcard actions",
@@ -1378,7 +1404,7 @@ def r_iam_admin(ctx: TemplateCtx):
       description="An Allow statement grants service:* (for example s3:* or ec2:*). The principal receives every current and future action for the service, far beyond what the workload needs.",
       remediation="Replace service:* with the specific actions the workload calls; use IAM Access Analyzer policy generation from CloudTrail to derive the list.")
 def r_iam_service_wildcard(ctx: TemplateCtx):
-    for lid, rtype, s, line, where in iter_policy_documents(ctx):
+    for lid, rtype, s, line, where, key in iter_policy_documents(ctx):
         if s.get("Effect") != "Allow":
             continue
         actions = stmt_actions(s)
@@ -1386,7 +1412,7 @@ def r_iam_service_wildcard(ctx: TemplateCtx):
             continue  # CSA-IAM-001
         wild = [a for a in actions if a.endswith(":*") or a == "*"]
         if wild:
-            yield Hit(lid, rtype, line, f"{where}: {', '.join(wild[:4])}")
+            yield Hit(lid, rtype, line, f"{where}: {', '.join(wild[:4])}", key=key)
 
 
 @rule(id="CSA-IAM-003", title="IAM policy allows write actions on Resource *",
@@ -1395,7 +1421,7 @@ def r_iam_service_wildcard(ctx: TemplateCtx):
       description="An Allow statement with non-read-only actions applies to Resource \"*\". The principal can modify or delete any resource of that type in the account.",
       remediation="Scope Resource to the ARNs the workload owns (use !Sub with the stack's resource names) and add Condition keys where the service requires *.")
 def r_iam_resource_wildcard(ctx: TemplateCtx):
-    for lid, rtype, s, line, where in iter_policy_documents(ctx):
+    for lid, rtype, s, line, where, key in iter_policy_documents(ctx):
         if s.get("Effect") != "Allow":
             continue
         actions = stmt_actions(s)
@@ -1407,7 +1433,7 @@ def r_iam_resource_wildcard(ctx: TemplateCtx):
         if all(a.split(":")[0].lower() in {"cloudwatch", "xray", "ec2messages", "ssmmessages", "sts"}
                or a.lower() in {"logs:createloggroup", "logs:describeloggroups", "logs:describelogstreams"} for a in actions):
             continue
-        yield Hit(lid, rtype, line, f"{where}: {', '.join(actions[:4])}{'...' if len(actions) > 4 else ''} on Resource *")
+        yield Hit(lid, rtype, line, f"{where}: {', '.join(actions[:4])}{'...' if len(actions) > 4 else ''} on Resource *", key=key)
 
 
 @rule(id="CSA-IAM-004", title="IAM policy allows iam:PassRole on Resource *",
@@ -1416,14 +1442,14 @@ def r_iam_resource_wildcard(ctx: TemplateCtx):
       description="iam:PassRole (or iam:*) is allowed on any role. The principal can pass a more privileged role to a service and escalate privileges.",
       remediation="Restrict iam:PassRole to the specific role ARNs and add Condition iam:PassedToService.")
 def r_iam_passrole(ctx: TemplateCtx):
-    for lid, rtype, s, line, where in iter_policy_documents(ctx):
+    for lid, rtype, s, line, where, key in iter_policy_documents(ctx):
         if s.get("Effect") != "Allow":
             continue
         actions = [a.lower() for a in stmt_actions(s)]
         if "*" in actions:
             continue
         if any(a in {"iam:passrole", "iam:*", "iam:pass*"} for a in actions) and any(r == "*" for r in stmt_resources(s)) and not statement_has_condition(s):
-            yield Hit(lid, rtype, line, f"{where}: iam:PassRole on Resource *")
+            yield Hit(lid, rtype, line, f"{where}: iam:PassRole on Resource *", key=key)
 
 
 @rule(id="CSA-IAM-005", title="IAM user or group carries inline policies or long-lived credentials",
@@ -1482,6 +1508,7 @@ def r_public_principal(ctx: TemplateCtx):
         for s in iter_statements(props(res).get("AssumeRolePolicyDocument")):
             if s.get("Effect") == "Allow" and principal_is_public(s.get("Principal")) and not statement_has_condition(s):
                 yield Hit(lid, rtype_of(res), node_line(s, ctx.resource_line(lid, res)), "AssumeRolePolicyDocument allows Principal *")
+                break
     for lid, res in ctx.by_type("AWS::KMS::Key", "AWS::SQS::QueuePolicy", "AWS::SNS::TopicPolicy", "AWS::SecretsManager::ResourcePolicy", "AWS::ECR::Repository"):
         p = props(res)
         doc = p.get("KeyPolicy") or p.get("PolicyDocument") or p.get("ResourcePolicy") or p.get("RepositoryPolicyText")
@@ -1733,8 +1760,9 @@ class Finding:
 
 
 def make_finding_id(rule_id: str, rel: str, resource: str, discriminator: str = "") -> str:
-    """Stable ID from rule, template and resource. ``discriminator`` (the hit detail, which never
-    contains line numbers) separates several hits of one rule on one resource."""
+    """Stable ID from rule, template and resource. ``discriminator`` is the hit key of rules that can report one
+    resource several times; it is always applied for such rules, so an ID does not depend on which sibling hits
+    exist in a given run."""
     h = hashlib.sha1(f"{rule_id}|{rel}|{resource}".encode()).hexdigest()[:6].upper()
     if discriminator:
         h += "-" + hashlib.sha1(discriminator.encode()).hexdigest()[:4].upper()
@@ -1746,11 +1774,11 @@ def service_dir_of(rel: str) -> str:
     return parts[0] if len(parts) > 1 else "(root)"
 
 
-def finding_from_hit(rule_: Rule, ctx: TemplateCtx, hit: Hit, discriminator: str = "") -> Finding:
+def finding_from_hit(rule_: Rule, ctx: TemplateCtx, hit: Hit) -> Finding:
     sev = hit.severity or rule_.severity
     line = hit.line or 1
     return Finding(
-        finding_id=make_finding_id(rule_.id, ctx.rel, hit.logical_id, discriminator),
+        finding_id=make_finding_id(rule_.id, ctx.rel, hit.logical_id, hit.key or ""),
         template_path=ctx.rel,
         service_directory=ctx.service_dir,
         resource_logical_id=hit.logical_id,
@@ -1960,6 +1988,21 @@ def has_rain_directive(path: Path) -> bool:
         return False
 
 
+def checkov_parsing_errors(data: object) -> int:
+    """Number of files Checkov failed to parse. Checkov exits 0 for a malformed template and reports it only in
+    ``summary.parsing_errors`` (or ``results.parsing_errors``), so that counter, not the exit code, decides coverage."""
+    n = 0
+    for rep in data if isinstance(data, list) else [data]:
+        if not isinstance(rep, dict):
+            continue
+        summary = rep.get("summary") if isinstance(rep.get("summary"), dict) else rep
+        pe = summary.get("parsing_errors", 0)
+        n += len(pe) if isinstance(pe, list) else int(pe or 0)
+        pe = (rep.get("results") or {}).get("parsing_errors") if isinstance(rep.get("results"), dict) else None
+        n += len(pe) if isinstance(pe, list) else 0
+    return n
+
+
 def checkov_hits_from_report(data: object) -> list[ExternalHit]:
     hits: list[ExternalHit] = []
     reports = data if isinstance(data, list) else [data]
@@ -1999,8 +2042,8 @@ def run_checkov(repo: Path, templates: list[Path], terraform: list[Path], tr: To
         except subprocess.TimeoutExpired:
             return t, None
         data = parse_json_prefix(cp.stdout)
-        if data is None:
-            return t, None if cp.returncode not in (0, 1) else []
+        if data is None or checkov_parsing_errors(data):
+            return t, None
         hits = checkov_hits_from_report(data)
         for h in hits:
             h.rel = str(t.relative_to(repo))
@@ -2021,7 +2064,7 @@ def run_checkov(repo: Path, templates: list[Path], terraform: list[Path], tr: To
             failed.append(str(tf_dir.relative_to(repo)))
             continue
         data = parse_json_prefix(cp.stdout)
-        if data is None:
+        if data is None or checkov_parsing_errors(data):
             failed.append(str(tf_dir.relative_to(repo)))
             continue
         for h in checkov_hits_from_report(data):
@@ -2055,7 +2098,10 @@ def run_cfn_nag(repo: Path, templates: list[Path], tr: ToolResult) -> list[Exter
         rel = str(t.relative_to(repo))
         out: list[ExternalHit] = []
         for entry in data:
-            for v in (entry.get("file_results") or {}).get("violations") or []:
+            violations = (entry.get("file_results") or {}).get("violations") or []
+            if any(v.get("id") == "FATAL" for v in violations):
+                return t, None  # cfn_nag could not parse the template; it reports that as a FATAL pseudo-violation
+            for v in violations:
                 ids = v.get("logical_resource_ids") or [""]
                 lines = v.get("line_numbers") or []
                 for i, lid in enumerate(ids):
@@ -2077,6 +2123,11 @@ def run_cfn_nag(repo: Path, templates: list[Path], tr: ToolResult) -> list[Exter
     if failed:
         tr.note = f"{len(failed)} template(s) could not be parsed by cfn_nag: " + ", ".join(failed)
     return hits
+
+
+# cfn-lint exit codes that carry a result list: 0 clean, 2 errors, 4 warnings, 8 informational and their sums.
+# 1 is an invocation error (bad arguments, unreadable input) and produces no result list.
+LINT_RESULT_CODES = {0, 2, 4, 6, 8, 10, 12, 14}
 
 
 def run_cfn_lint(repo: Path, templates: list[Path], tr: ToolResult) -> tuple[list[ExternalHit], int]:
@@ -2109,10 +2160,8 @@ def run_cfn_lint(repo: Path, templates: list[Path], tr: ToolResult) -> tuple[lis
     if (repo / ".cfnlintrc").exists():
         base += ["--config-file", str(repo / ".cfnlintrc")]
 
-    def collect(data: object, filename: str | None = None) -> None:
+    def collect(data: list, filename: str | None = None) -> None:
         nonlocal warnings
-        if not isinstance(data, list):
-            return
         for m in data:
             if not isinstance(m, dict):
                 continue
@@ -2133,10 +2182,22 @@ def run_cfn_lint(repo: Path, templates: list[Path], tr: ToolResult) -> tuple[lis
         try:
             cp = run(base + ["--"] + chunk, repo, timeout=1800)
         except subprocess.TimeoutExpired:
-            tr.note += f" batch {i} timed out;"
+            tr.note += f" batch {i // batch + 1} timed out;"
             failed += [Path(c).as_posix() for c in chunk]
             continue
-        collect(parse_json_prefix(cp.stdout, "["))
+        data = parse_json_prefix(cp.stdout, "[")
+        if cp.returncode not in LINT_RESULT_CODES or not isinstance(data, list):
+            # No result list means the invocation itself failed; none of the chunk was linted.
+            tr.note += f" batch {i // batch + 1} returned exit code {cp.returncode} without a JSON result list;"
+            failed += [Path(c).as_posix() for c in chunk]
+            continue
+        invocation_errors = [m.get("Message", "") for m in data if isinstance(m, dict) and not m.get("Filename")]
+        if invocation_errors:
+            # cfn-lint stops before linting any file of the invocation when one argument cannot be processed (E0003 etc.).
+            tr.note += f" batch {i // batch + 1} aborted: {str(invocation_errors[0])[:120]};"
+            failed += [Path(c).as_posix() for c in chunk]
+            continue
+        collect(data)
     for t in rain_templates:
         rel = t.relative_to(repo).as_posix()
         if not rain:
@@ -2151,7 +2212,11 @@ def run_cfn_lint(repo: Path, templates: list[Path], tr: ToolResult) -> tuple[lis
         except subprocess.TimeoutExpired:
             failed.append(rel)
             continue
-        collect(parse_json_prefix(cp.stdout, "["), rel)
+        data = parse_json_prefix(cp.stdout, "[")
+        if cp.returncode not in LINT_RESULT_CODES or not isinstance(data, list):
+            failed.append(rel)
+            continue
+        collect(data, rel)
     tr.duration_s = round(time.time() - t0, 1)
     tr.status, tr.raw_count = "ran", len(hits)
     tr.unparsed = failed
@@ -2161,7 +2226,7 @@ def run_cfn_lint(repo: Path, templates: list[Path], tr: ToolResult) -> tuple[lis
         note += (f"; {len(excluded)} template(s) not linted per the repository lint convention (macro examples and Rain module fragments): "
                  + ", ".join(excluded))
     if failed:
-        note += (f"; {len(failed)} template(s) with !Rain:: directives could not be linted (`rain pkg` unavailable, failed or timed out): "
+        note += (f"; {len(failed)} template(s) could not be linted (invocation failed or timed out, or `rain pkg` unavailable or failed): "
                  + ", ".join(failed))
     tr.note = (tr.note + " " + note).strip()
     return hits, warnings
@@ -2402,18 +2467,28 @@ TWIN_RULE = Rule(
 )
 
 
-def check_generated_twins(repo: Path, twins: dict[Path, Path]) -> list[Finding]:
+def check_generated_twins(repo: Path, twins: dict[Path, Path]) -> tuple[list[Finding], set[str], list[str]]:
+    """Returns (drift findings, twins compared with their source, twins that could not be compared).
+
+    A twin is compared only when both it and its YAML source parse; otherwise it is reported as not compared
+    so that the coverage gate and the baseline carry-forward do not treat it as assessed."""
     out: list[Finding] = []
+    compared: set[str] = set()
+    failed: list[str] = []
     for gen, src in sorted(twins.items()):
-        g, s = load_template(gen), load_template(src)
-        if g is None or s is None or _canon(g) == _canon(s):
-            continue
         rel = str(gen.relative_to(repo).as_posix())
+        g, s = load_template(gen), load_template(src)
+        if g is None or s is None:
+            failed.append(rel)
+            continue
+        compared.add(rel)
+        if _canon(g) == _canon(s):
+            continue
         text = gen.read_text(encoding="utf-8", errors="replace")
         ctx = TemplateCtx(path=gen, rel=rel, text=text, lines=text.splitlines(), data=g, service_dir=service_dir_of(rel))
         hit = Hit("(template)", "AWS::CloudFormation::Template", 1, f"content differs from {src.relative_to(repo).as_posix()}")
         out.append(finding_from_hit(TWIN_RULE, ctx, hit))
-    return out
+    return out, compared, failed
 
 
 def assess_templates(repo: Path, templates: list[Path]) -> tuple[list[Finding], dict[tuple[str, str], str], Counter, Counter, set[str]]:
@@ -2423,6 +2498,7 @@ def assess_templates(repo: Path, templates: list[Path]) -> tuple[list[Finding], 
     type_counts: Counter = Counter()
     rule_hits: Counter = Counter()
     parsed: set[str] = set()
+    seen_ids: set[str] = set()
     for t in templates:
         rel = str(t.relative_to(repo).as_posix())
         text = t.read_text(encoding="utf-8", errors="replace")
@@ -2442,10 +2518,13 @@ def assess_templates(repo: Path, templates: list[Path]) -> tuple[list[Finding], 
             except Exception as e:  # noqa: BLE001 - a rule bug must not abort the assessment
                 print(f"  [warn] rule {r.id} failed on {rel}: {e}", file=sys.stderr)
                 continue
-            per_resource = Counter(h.logical_id for h in hits)
             for hit in hits:
-                # Several hits of one rule on one resource (e.g. two open ingress rules) get distinct IDs.
-                findings.append(finding_from_hit(r, ctx, hit, hit.detail if per_resource[hit.logical_id] > 1 else ""))
+                f = finding_from_hit(r, ctx, hit)
+                if f.finding_id in seen_ids:
+                    print(f"  [warn] rule {r.id} reported {rel}:{hit.logical_id} twice with the same key; the duplicate is dropped", file=sys.stderr)
+                    continue
+                seen_ids.add(f.finding_id)
+                findings.append(f)
                 rule_hits[r.id] += 1
     return findings, resource_types, type_counts, rule_hits, parsed
 
@@ -2752,11 +2831,12 @@ def main(argv: list[str] | None = None) -> int:
 
     print("Running custom rule pack ...")
     findings, resource_types, type_counts, rule_hits, parsed = assess_templates(repo, templates)
-    twin_findings = check_generated_twins(repo, twins)
+    twin_findings, twins_compared, twins_failed = check_generated_twins(repo, twins)
     findings += twin_findings
-    parsed |= {str(g.relative_to(repo).as_posix()) for g in twins}
+    parsed |= twins_compared
     rule_hits[TWIN_RULE.id] += len(twin_findings)
-    print(f"  custom rule findings: {len(findings)} ({len(twin_findings)} generated JSON files differ from their YAML source)")
+    print(f"  custom rule findings: {len(findings)} ({len(twin_findings)} generated JSON files differ from their YAML source; "
+          f"{len(twins_failed)} twin(s) could not be compared)")
 
     tools: list[ToolResult] = []
     external: list[ExternalHit] = []
@@ -2796,6 +2876,7 @@ def main(argv: list[str] | None = None) -> int:
         "templates_assessed": len(templates), "terraform_files": len(terraform), "skipped_files": len(skipped),
         "generated_json_twins": {str(g.relative_to(repo).as_posix()): str(y.relative_to(repo).as_posix()) for g, y in sorted(twins.items())},
         "generated_json_assessed": args.include_generated_json,
+        "generated_json_not_compared": twins_failed,
         "tools": [t.__dict__ for t in tools],
         "custom_rules": [{"id": r.id, "title": r.title, "default_severity": r.severity, "nist": r.nist, "cis_aws_v3_id": r.cis,
                           "dod_cloud_srg_area": SRG_AREAS[r.area], "applies_to": r.applies_to, "overlapping_tool_ids": sorted(r.overlaps),
@@ -2814,6 +2895,8 @@ def main(argv: list[str] | None = None) -> int:
     unparsed_custom = sorted(t for t in meta["template_paths"] if t not in parsed)
     if unparsed_custom:
         incomplete.append(f"custom rule pack: {len(unparsed_custom)} template(s) could not be parsed: " + ", ".join(unparsed_custom))
+    if twins_failed:
+        incomplete.append(f"generated JSON: {len(twins_failed)} twin(s) could not be compared with their YAML source: " + ", ".join(twins_failed))
     if incomplete:
         print("Coverage gaps: " + "; ".join(incomplete))
         if args.fail_on_incomplete:
