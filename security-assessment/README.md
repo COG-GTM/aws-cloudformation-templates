@@ -33,7 +33,7 @@ Useful options for `scripts/cloud_security_assessment.py`:
 | `--dispositions <file.json>` | Apply Government dispositions: `{"<finding id>": {"disposition": "Risk acceptance recommended", "note": "..."}}`. Allowed values: `Open`, `Remediated in PR`, `Risk acceptance recommended`, `Not applicable`. |
 | `--include-generated-json` | Assess generated JSON twins as independent templates (by default they are compared with their YAML source and only drift is reported). |
 | `--skip-checkov`, `--skip-cfn-nag`, `--skip-cfn-lint` | Skip a tool. The `Method` sheet records what ran. |
-| `--fail-on-incomplete` | Exit 2 when a scanner was skipped, failed, or left templates unprocessed, so a CI gate cannot pass on an incomplete assessment. The console always prints the coverage gaps. |
+| `--fail-on-incomplete` | Exit 2 when a scanner was skipped, failed, or left templates unprocessed; when a custom rule raised on a template (`metadata.custom_rule_failures`); when a file with a template extension is not well-formed JSON/YAML (`metadata.malformed_files`, assessed by no scanner); or when a generated JSON twin could not be compared with its source. A CI gate therefore cannot pass on an incomplete assessment. The console always prints the coverage gaps. |
 | `--out-dir` | Output directory (default `security-assessment`). |
 
 Terraform: the runner scans any `.tf` files it finds with Checkov (`--framework terraform`). No Terraform sources exist in this revision, so that part of the method is recorded as not applicable.

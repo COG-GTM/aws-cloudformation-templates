@@ -260,19 +260,31 @@ CfnLoader.yaml_implicit_resolvers = {
 CfnLoader.add_implicit_resolver("tag:yaml.org,2002:bool", re.compile(r"^(?:true|True|TRUE|false|False|FALSE)$"), list("tTfF"))
 
 
-def load_template(path: Path) -> dict | None:
+class TemplateParseError(ValueError):
+    """The file is not well-formed JSON or YAML (as opposed to well-formed content that is not a template)."""
+
+
+def parse_documents(path: Path) -> list[Any]:
+    """Every document in the file; raises TemplateParseError when the text is malformed."""
     text = path.read_text(encoding="utf-8", errors="replace")
     if path.suffix == ".json" or text.lstrip().startswith("{"):
         try:
-            data = json.loads(text)
-        except json.JSONDecodeError:
-            return None
-        return data if isinstance(data, dict) else None
+            return [json.loads(text)]
+        except json.JSONDecodeError as e:
+            raise TemplateParseError(str(e)) from e
     try:
-        data = yaml.load(text, Loader=CfnLoader)  # noqa: S506 - SafeLoader subclass
-    except yaml.YAMLError:
+        return list(yaml.load_all(text, Loader=CfnLoader))  # noqa: S506 - SafeLoader subclass
+    except yaml.YAMLError as e:
+        raise TemplateParseError(str(e)) from e
+
+
+def load_template(path: Path) -> dict | None:
+    """The single mapping document in the file, or None when the file is malformed or is not one mapping."""
+    try:
+        docs = parse_documents(path)
+    except TemplateParseError:
         return None
-    return data if isinstance(data, dict) else None
+    return docs[0] if len(docs) == 1 and isinstance(docs[0], dict) else None
 
 
 def is_cfn_template(data: dict) -> bool:
@@ -903,6 +915,8 @@ def r_edge_tls(ctx: TemplateCtx):
             continue
         dcb = cfg.get("DefaultCacheBehavior") or {}
         vpp = dcb.get("ViewerProtocolPolicy") if isinstance(dcb, dict) else None
+        clear_text_paths = [str(b.get("PathPattern")) for b in as_list(cfg.get("CacheBehaviors"))
+                            if isinstance(b, dict) and b.get("ViewerProtocolPolicy") == "allow-all"]
         cert = cfg.get("ViewerCertificate") or {}
         mpv_raw = cert.get("MinimumProtocolVersion") if isinstance(cert, dict) else None
         mpv_values = [v for v in ctx.resolve(mpv_raw) if v is not UNKNOWN] if mpv_raw is not None else []
@@ -911,6 +925,9 @@ def r_edge_tls(ctx: TemplateCtx):
         custom_cert = isinstance(cert, dict) and ("AcmCertificateArn" in cert or "IamCertificateId" in cert)
         if vpp == "allow-all":
             yield Hit(lid, rtype_of(res), ctx.resource_line(lid, res), "DefaultCacheBehavior.ViewerProtocolPolicy=allow-all")
+        elif clear_text_paths:
+            yield Hit(lid, rtype_of(res), ctx.resource_line(lid, res),
+                      "CacheBehaviors ViewerProtocolPolicy=allow-all for PathPattern " + ", ".join(clear_text_paths))
         elif default_cert or not cert:
             yield Hit(lid, rtype_of(res), ctx.resource_line(lid, res), "ViewerCertificate MinimumProtocolVersion=default (TLSv1 with the CloudFront default certificate)")
         elif custom_cert and mpv_raw is None:
@@ -1278,8 +1295,10 @@ def r_eks_logs(ctx: TemplateCtx):
         logging_ = props(res).get("Logging") or {}
         types: set[str] = set()
         cl = logging_.get("ClusterLogging") if isinstance(logging_, dict) else None
-        if isinstance(cl, dict):
-            for e in as_list(cl.get("EnabledTypes")):
+        for config in as_list(cl):  # CloudFormation models ClusterLogging as a list of {EnabledTypes: [...]}
+            if not isinstance(config, dict):
+                continue
+            for e in as_list(config.get("EnabledTypes")):
                 if isinstance(e, dict) and isinstance(e.get("Type"), str):
                     types.add(e["Type"])
         missing = {"api", "audit", "authenticator"} - types
@@ -2347,25 +2366,33 @@ def rank(findings: list[Finding]) -> None:
     findings.sort(key=lambda f: f.risk_rank)
 
 
-def coverage_gap(f: Finding, tools: list[ToolResult], parsed: set[str]) -> str:
-    """Why the current run could not re-evaluate ``f``; empty when every source that produced it was rerun on its template."""
-    if f.template_path not in parsed:
-        return "its template was not parsed by the custom rule pack in this run"
+def path_in(path: str, unprocessed: Iterable[str]) -> bool:
+    """True when ``path`` is one of ``unprocessed`` or lies under a directory listed there (Checkov scans Terraform per directory)."""
+    return any(path == u or path.startswith(u.rstrip("/") + "/") for u in unprocessed)
+
+
+def coverage_gap(f: Finding, tools: list[ToolResult], parsed: set[str], rule_failures: dict[str, list[str]] | None = None) -> str:
+    """Why the current run could not re-evaluate ``f``; empty when every source that produced it was rerun on its file."""
     by_name = {t.name: t for t in tools}
     for src in f.source.split("+"):
         if src == "custom":
+            if f.template_path not in parsed:
+                return "its template was not parsed by the custom rule pack in this run"
+            if f.custom_rule_id and f.custom_rule_id in (rule_failures or {}).get(f.template_path, []):
+                return f"rule {f.custom_rule_id} failed on the template in this run"
             continue
         t = by_name.get(src)
         if t is None or t.status != "ran":
             reason = t.note if t and t.note else "not configured"
             return f"{src} did not run in this run ({reason})"
-        if f.template_path in t.unparsed:
-            return f"{src} could not process the template in this run"
+        if path_in(f.template_path, t.unparsed):
+            return f"{src} could not process the file in this run"
     return ""
 
 
 def apply_baseline(findings: list[Finding], baseline_path: Path | None, dispositions_path: Path | None,
-                   tools: list[ToolResult] | None = None, parsed: set[str] | None = None) -> tuple[list[Finding], dict | None]:
+                   tools: list[ToolResult] | None = None, parsed: set[str] | None = None,
+                   rule_failures: dict[str, list[str]] | None = None) -> tuple[list[Finding], dict | None]:
     """Carry baseline findings that are absent from the current run.
 
     A missing finding is ``Remediated in PR`` only when every tool that produced it ran again on
@@ -2384,7 +2411,7 @@ def apply_baseline(findings: list[Finding], baseline_path: Path | None, disposit
             if d.get("disposition") in {"Not applicable"}:
                 continue
             carried = Finding(**{k: v for k, v in d.items() if k in {fl.name for fl in fields(Finding)}})
-            gap = coverage_gap(carried, tools or [], parsed if parsed is not None else {carried.template_path})
+            gap = coverage_gap(carried, tools or [], parsed if parsed is not None else {carried.template_path}, rule_failures)
             if gap:
                 carried.disposition_note = f"Not re-evaluated: {gap}; disposition carried forward from baseline commit {base_sha}."
             else:
@@ -2406,17 +2433,23 @@ def apply_baseline(findings: list[Finding], baseline_path: Path | None, disposit
 # --------------------------------------------------------------------------------------
 
 
-def discover_templates(repo: Path, include_generated_json: bool = False) -> tuple[list[Path], list[Path], list[str], dict[Path, Path]]:
-    """Return (templates, terraform files, skipped candidates, generated JSON twins).
+def discover_templates(repo: Path, include_generated_json: bool = False) -> tuple[list[Path], list[Path], list[str], dict[Path, Path], list[str]]:
+    """Return (templates, terraform files, skipped non-template files, generated JSON twins, malformed files).
 
     The repository treats YAML as the source of truth and generates the sibling ``.json``
     file with Rain. A JSON file whose YAML sibling exists is a *generated twin*: it is not
     assessed separately (that would double every finding) but it is compared with its
     source so that drift is reported. ``include_generated_json`` assesses twins anyway.
+
+    A well-formed file that is not a CloudFormation template (a Kubernetes manifest, an event
+    fixture) is *skipped*. A file with a template extension that is not well-formed JSON/YAML is
+    *malformed*: nothing can tell whether it is a template, so it is reported as a coverage gap
+    rather than silently dropped.
     """
     templates: list[Path] = []
     terraform: list[Path] = []
     skipped: list[str] = []
+    malformed: list[str] = []
     twins: dict[Path, Path] = {}
     for root, dirs, files in os.walk(repo):
         dirs[:] = sorted(d for d in dirs if d not in SKIP_DIRS and not d.startswith("."))
@@ -2429,9 +2462,14 @@ def discover_templates(repo: Path, include_generated_json: bool = False) -> tupl
                 continue
             if fn in {".cfnlintrc", "cfn-lint.yaml", "package.json", "package-lock.json"} or fn.startswith("."):
                 continue
-            data = load_template(p)
-            if data is None or not is_cfn_template(data):
-                skipped.append(str(p.relative_to(repo)))
+            rel = str(p.relative_to(repo).as_posix())
+            try:
+                docs = parse_documents(p)
+            except TemplateParseError:
+                malformed.append(rel)
+                continue
+            if len(docs) != 1 or not isinstance(docs[0], dict) or not is_cfn_template(docs[0]):
+                skipped.append(rel)
                 continue
             if p.suffix == ".json":
                 src = next((p.with_suffix(ext) for ext in (".yaml", ".yml") if p.with_suffix(ext).is_file()), None)
@@ -2440,10 +2478,12 @@ def discover_templates(repo: Path, include_generated_json: bool = False) -> tupl
                     if not include_generated_json:
                         continue
             templates.append(p)
-    return templates, terraform, skipped, twins
+    return templates, terraform, skipped, twins, malformed
 
 
 def _canon(node: object) -> object:
+    """Text rendering of an expression for *identity* purposes (bucket-name matching, IAM statement digests): scalars
+    become strings so ``Ref: X`` in YAML and JSON digest identically regardless of scalar typing."""
     if isinstance(node, dict):
         return {str(k): _canon(v) for k, v in node.items()}
     if isinstance(node, list):
@@ -2453,6 +2493,20 @@ def _canon(node: object) -> object:
     if node is None:
         return ""
     return str(node)
+
+
+def _twin_canon(node: object) -> object:
+    """Plain-Python rendering of a template for *drift comparison*: line-aware containers become dict/list and every
+    scalar keeps its type, so ``80`` vs ``"80"``, ``true`` vs ``"true"`` and a dropped value (``null``) vs ``""`` are
+    reported as drift. The one equivalence applied is ``Fn::GetAZs`` with an empty string versus null: YAML ``!GetAZs ""``
+    and Rain's JSON ``{"Fn::GetAZs": null}`` both denote the current Region."""
+    if isinstance(node, dict):
+        if set(node) == {"Fn::GetAZs"} and node["Fn::GetAZs"] in (None, ""):
+            return {"Fn::GetAZs": ""}
+        return {str(k): _twin_canon(v) for k, v in node.items()}
+    if isinstance(node, list):
+        return [_twin_canon(v) for v in node]
+    return node
 
 
 TWIN_RULE = Rule(
@@ -2482,7 +2536,7 @@ def check_generated_twins(repo: Path, twins: dict[Path, Path]) -> tuple[list[Fin
             failed.append(rel)
             continue
         compared.add(rel)
-        if _canon(g) == _canon(s):
+        if _twin_canon(g) == _twin_canon(s):
             continue
         text = gen.read_text(encoding="utf-8", errors="replace")
         ctx = TemplateCtx(path=gen, rel=rel, text=text, lines=text.splitlines(), data=g, service_dir=service_dir_of(rel))
@@ -2491,13 +2545,17 @@ def check_generated_twins(repo: Path, twins: dict[Path, Path]) -> tuple[list[Fin
     return out, compared, failed
 
 
-def assess_templates(repo: Path, templates: list[Path]) -> tuple[list[Finding], dict[tuple[str, str], str], Counter, Counter, set[str]]:
-    """Returns (findings, resource types, type counts, hits per rule, templates the rule pack parsed)."""
+def assess_templates(repo: Path, templates: list[Path]) -> tuple[list[Finding], dict[tuple[str, str], str], Counter, Counter, set[str], dict[str, list[str]]]:
+    """Returns (findings, resource types, type counts, hits per rule, templates the rule pack parsed,
+    rules that raised per template). A rule that raises is recorded rather than re-raised so one rule bug does not
+    abort the run, but the (template, rule) pair is a coverage gap: it fails ``--fail-on-incomplete`` and blocks the
+    baseline carry-forward from marking that rule's findings on that template as remediated."""
     findings: list[Finding] = []
     resource_types: dict[tuple[str, str], str] = {}
     type_counts: Counter = Counter()
     rule_hits: Counter = Counter()
     parsed: set[str] = set()
+    rule_failures: dict[str, list[str]] = {}
     seen_ids: set[str] = set()
     for t in templates:
         rel = str(t.relative_to(repo).as_posix())
@@ -2517,6 +2575,7 @@ def assess_templates(repo: Path, templates: list[Path]) -> tuple[list[Finding], 
                 hits = list(r.check(ctx))
             except Exception as e:  # noqa: BLE001 - a rule bug must not abort the assessment
                 print(f"  [warn] rule {r.id} failed on {rel}: {e}", file=sys.stderr)
+                rule_failures.setdefault(rel, []).append(r.id)
                 continue
             for hit in hits:
                 f = finding_from_hit(r, ctx, hit)
@@ -2526,7 +2585,7 @@ def assess_templates(repo: Path, templates: list[Path]) -> tuple[list[Finding], 
                 seen_ids.add(f.finding_id)
                 findings.append(f)
                 rule_hits[r.id] += 1
-    return findings, resource_types, type_counts, rule_hits, parsed
+    return findings, resource_types, type_counts, rule_hits, parsed, rule_failures
 
 
 # --------------------------------------------------------------------------------------
@@ -2754,6 +2813,8 @@ def write_xlsx(path: Path, findings: list[Finding], summary: dict, before: dict 
         ["Runner", f"scripts/cloud_security_assessment.py (Python {platform.python_version()}, PyYAML {yaml.__version__})"],
         ["Templates discovered", f"{summary['templates_assessed']} CloudFormation templates (.yaml/.yml/.json/.template with a Resources section)"],
         ["Files skipped (not CloudFormation)", str(meta["skipped_files"])],
+        ["Malformed JSON/YAML files (not assessed by any scanner)", ", ".join(meta["malformed_files"]) or "none"],
+        ["Custom rule failures (template: rules)", "; ".join(f"{p}: {', '.join(ids)}" for p, ids in sorted(meta["custom_rule_failures"].items())) or "none"],
         ["Terraform", f"{meta['terraform_files']} .tf files found. " + ("Scanned with Checkov (terraform framework)." if meta["terraform_files"] else
                       "No Terraform sources exist in this revision; the Terraform check is not applicable. The runner scans .tf files automatically when present.")],
     ]
@@ -2825,12 +2886,13 @@ def main(argv: list[str] | None = None) -> int:
     scan_date = dt.datetime.now(dt.timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
 
     print(f"Repository: {repo}\nCommit: {sha} ({branch})")
-    templates, terraform, skipped, twins = discover_templates(repo, args.include_generated_json)
+    templates, terraform, skipped, twins, malformed = discover_templates(repo, args.include_generated_json)
     print(f"Discovered {len(templates)} CloudFormation templates, {len(terraform)} Terraform files; "
-          f"{len(twins)} generated JSON twins of YAML sources; skipped {len(skipped)} non-template files")
+          f"{len(twins)} generated JSON twins of YAML sources; skipped {len(skipped)} non-template files; "
+          f"{len(malformed)} malformed JSON/YAML file(s)")
 
     print("Running custom rule pack ...")
-    findings, resource_types, type_counts, rule_hits, parsed = assess_templates(repo, templates)
+    findings, resource_types, type_counts, rule_hits, parsed, rule_failures = assess_templates(repo, templates)
     twin_findings, twins_compared, twins_failed = check_generated_twins(repo, twins)
     findings += twin_findings
     parsed |= twins_compared
@@ -2865,15 +2927,16 @@ def main(argv: list[str] | None = None) -> int:
     templates_sha, templates_dirty = template_revision(repo, sorted(assessed))
     findings = merge_external(findings, external, repo, resource_types, assessed)
     findings, before = apply_baseline(findings, Path(args.baseline) if args.baseline else None, Path(args.dispositions) if args.dispositions else None,
-                                      tools, parsed)
+                                      tools, parsed, rule_failures)
     rank(findings)
     summary = summarize(findings, templates)
     coverage = control_coverage(findings, len(templates))
 
     meta = {
-        "scan_date": scan_date, "commit_sha": sha, "branch": branch, "repo_root": str(repo),
+        "scan_date": scan_date, "commit_sha": sha, "branch": branch, "repo_root": repo.name,
         "templates_commit_sha": templates_sha, "templates_with_uncommitted_edits": templates_dirty,
         "templates_assessed": len(templates), "terraform_files": len(terraform), "skipped_files": len(skipped),
+        "malformed_files": malformed, "custom_rule_failures": rule_failures,
         "generated_json_twins": {str(g.relative_to(repo).as_posix()): str(y.relative_to(repo).as_posix()) for g, y in sorted(twins.items())},
         "generated_json_assessed": args.include_generated_json,
         "generated_json_not_compared": twins_failed,
@@ -2884,7 +2947,7 @@ def main(argv: list[str] | None = None) -> int:
         "resource_type_counts": dict(type_counts.most_common()),
         "template_paths": [str(t.relative_to(repo).as_posix()) for t in templates],
         "terraform_paths": [str(t.relative_to(repo).as_posix()) for t in terraform],
-        "baseline": args.baseline, "cfn_lint_warnings": lint_warnings,
+        "baseline": Path(args.baseline).name if args.baseline else None, "cfn_lint_warnings": lint_warnings,
     }
     payload = {"metadata": meta, "summary": summary, "before_remediation": before, "control_coverage": coverage,
                "findings": [f.to_dict() for f in findings]}
@@ -2895,6 +2958,10 @@ def main(argv: list[str] | None = None) -> int:
     unparsed_custom = sorted(t for t in meta["template_paths"] if t not in parsed)
     if unparsed_custom:
         incomplete.append(f"custom rule pack: {len(unparsed_custom)} template(s) could not be parsed: " + ", ".join(unparsed_custom))
+    if rule_failures:
+        incomplete.append("custom rule pack: rule failures on " + "; ".join(f"{p} ({', '.join(ids)})" for p, ids in sorted(rule_failures.items())))
+    if malformed:
+        incomplete.append(f"discovery: {len(malformed)} file(s) with a template extension are not well-formed JSON/YAML and were not assessed by any scanner: " + ", ".join(malformed))
     if twins_failed:
         incomplete.append(f"generated JSON: {len(twins_failed)} twin(s) could not be compared with their YAML source: " + ", ".join(twins_failed))
     if incomplete:

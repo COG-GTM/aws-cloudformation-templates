@@ -1,6 +1,6 @@
 # Cloud Security Assessment Report
 
-Infrastructure-as-code baseline: CloudFormation templates in this repository at commit `d41ba46e7bb7818ebc1d3c73ad8e664d0eb0c860` (branch `devin/1789423490-cloud-security-assessment`), assessed 2026-09-14 23:08 UTC. The templates were last changed in commit `a0f43bc6d20813052892546f445037cf84c75b54`; later commits on this branch do not change any assessed template. Prepared in the form of CDRL A008, Cloud Security Assessment Report, for the Government and the system owner.
+Infrastructure-as-code baseline: CloudFormation templates in this repository at commit `0325dce1265cb0b2bdf241d5df001099e8b19494` (branch `devin/1789423490-cloud-security-assessment`), assessed 2026-09-14 23:23 UTC. The templates were last changed in commit `a0f43bc6d20813052892546f445037cf84c75b54`; later commits on this branch do not change any assessed template. Prepared in the form of CDRL A008, Cloud Security Assessment Report, for the Government and the system owner.
 
 ## 1. Executive summary
 
@@ -27,7 +27,7 @@ Key results:
 
 ### 2.1 Scope
 
-- 158 CloudFormation templates (`.yaml`, `.yml`, `.json`, `.template` files with a `Resources` section) across 26 service directories with open findings. 21 candidate files were skipped because they are not CloudFormation templates (for example Lambda source, policy fragments, configuration files).
+- 158 CloudFormation templates (`.yaml`, `.yml`, `.json`, `.template` files with a `Resources` section) across 26 service directories with open findings. 21 candidate files were skipped because they are not CloudFormation templates (for example Lambda source, policy fragments, configuration files). Every file with a template extension was well-formed JSON or YAML.
 - 136 JSON templates are generated twins of a YAML source in the same directory. YAML is the source of truth in this repository, so twins are not assessed separately (that would double every finding); each twin is compared with its source and drift is reported as finding `CSA-CFG-002`. Use `--include-generated-json` to assess twins as independent templates. Every twin was compared with its source.
 - Terraform: 0 `.tf` files found. Not applicable to this revision.
 - Static analysis only. No deployed-account evidence (AWS Config, Security Hub, CloudTrail) was available or used. Parameter values are evaluated from their template defaults.
@@ -182,10 +182,10 @@ The following cannot be decided from the templates alone and were not guessed:
 - **Administrative CIDR ranges.** Remediated templates take the permitted management CIDR as a parameter with no open default. The Government must supply the Cloud Access Point or management network range at deployment.
 - **KMS key ownership.** Encryption fixes use AWS-managed keys or a KMS key parameter. The Government must decide whether a customer-managed key with a documented rotation and key policy is required for each data classification (`CSA-KMS-001`, `CSA-ENC-002`, `CSA-ENC-010`).
 - **Central logging destinations.** VPC Flow Logs, load balancer access logs, S3 access logs and API Gateway execution logs need a Government-owned log bucket or log group and retention period. The templates do not name one.
-- **Public load balancers and bastions.** Internet-facing web tiers and bastion hosts keep their intent. The Government must confirm that each is approved through the Cloud Access Point and boundary architecture, or replace bastions with Session Manager.
+- **Public load balancers and bastions.** Internet-facing web tiers and bastion hosts keep their intent. The Government must decide, for each, whether it is approved through the Cloud Access Point and boundary architecture or whether the bastion is replaced with Session Manager.
 - **Lambda network placement.** Functions flagged `CSA-MON-002` run outside a VPC although the stack contains VPC data resources. Placing them in a VPC changes connectivity and requires endpoint or NAT design decisions.
 - **Risk acceptance.** The Government must accept or reject the CAT III findings recommended for risk acceptance and any finding it considers not applicable to a given workload; `--dispositions` records those decisions in the next run.
-- **Terraform.** Confirm whether a Terraform module exists on another branch or repository. None exists in this revision.
+- **Terraform.** None exists in this revision. The Government must state whether a Terraform module exists on another branch or repository so it can be brought into scope.
 
 ## Appendix A. Control crosswalk (custom rule pack)
 

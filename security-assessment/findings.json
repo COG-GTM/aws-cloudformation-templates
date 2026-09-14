@@ -1,14 +1,16 @@
 {
   "metadata": {
-    "scan_date": "2026-09-14 23:08 UTC",
-    "commit_sha": "d41ba46e7bb7818ebc1d3c73ad8e664d0eb0c860",
+    "scan_date": "2026-09-14 23:23 UTC",
+    "commit_sha": "0325dce1265cb0b2bdf241d5df001099e8b19494",
     "branch": "devin/1789423490-cloud-security-assessment",
-    "repo_root": "/home/ubuntu/repos/aws-cloudformation-templates",
+    "repo_root": "aws-cloudformation-templates",
     "templates_commit_sha": "a0f43bc6d20813052892546f445037cf84c75b54",
     "templates_with_uncommitted_edits": 0,
     "templates_assessed": 158,
     "terraform_files": 0,
     "skipped_files": 21,
+    "malformed_files": [],
+    "custom_rule_failures": {},
     "generated_json_twins": {
       "APIGateway/apigateway_lambda_integration.json": "APIGateway/apigateway_lambda_integration.yaml",
       "AWSSupplyChain/SapPrivateLink/SapPrivateLink.json": "AWSSupplyChain/SapPrivateLink/SapPrivateLink.yaml",
@@ -156,7 +158,7 @@
         "status": "ran",
         "note": "7 template(s) could not be parsed by checkov and were covered by the custom rule pack only: CloudFormation/StackSets/common-resources.yaml, RainModules/bucket.yml, RainModules/static-site.yml, Solutions/GitLab/GitLabServer.yaml, Solutions/GitLabAndVSCode/GitLabAndVSCode.yaml, Solutions/Gitea/Gitea.yaml, Solutions/VSCode/VSCodeServer.yaml",
         "raw_count": 478,
-        "duration_s": 52.0,
+        "duration_s": 51.7,
         "unparsed": [
           "CloudFormation/StackSets/common-resources.yaml",
           "RainModules/bucket.yml",
@@ -174,7 +176,7 @@
         "status": "ran",
         "note": "10 template(s) could not be parsed by cfn_nag: CloudFormation/MacrosExamples/Boto3/example.yaml, CloudFormation/MacrosExamples/ExecutionRoleBuilder/example.yaml, CloudFormation/StackSets/common-resources.yaml, ECS/ECS_Schedule_Example.yaml, RainModules/bucket.yml, RainModules/static-site.yml, Solutions/GitLab/GitLabServer.yaml, Solutions/GitLabAndVSCode/GitLabAndVSCode.yaml, Solutions/Gitea/Gitea.yaml, Solutions/VSCode/VSCodeServer.yaml",
         "raw_count": 518,
-        "duration_s": 4.1,
+        "duration_s": 5.0,
         "unparsed": [
           "CloudFormation/MacrosExamples/Boto3/example.yaml",
           "CloudFormation/MacrosExamples/ExecutionRoleBuilder/example.yaml",
@@ -195,7 +197,7 @@
         "status": "ran",
         "note": "56 warning/informational messages not treated as findings; 29 template(s) not linted per the repository lint convention (macro examples and Rain module fragments): CloudFormation/MacrosExamples/Boto3/example.yaml, CloudFormation/MacrosExamples/Boto3/macro.yaml, CloudFormation/MacrosExamples/Count/template.yaml, CloudFormation/MacrosExamples/Count/test.yaml, CloudFormation/MacrosExamples/DateFunctions/date.yaml, CloudFormation/MacrosExamples/DateFunctions/date_example.yaml, CloudFormation/MacrosExamples/DatetimeNow/datetimenow.yaml, CloudFormation/MacrosExamples/DatetimeNow/datetimenow_example.yaml, CloudFormation/MacrosExamples/ExecutionRoleBuilder/example.yaml, CloudFormation/MacrosExamples/ExecutionRoleBuilder/macro.yaml, CloudFormation/MacrosExamples/Explode/macro.yaml, CloudFormation/MacrosExamples/Explode/test.yaml, CloudFormation/MacrosExamples/PyPlate/python.yaml, CloudFormation/MacrosExamples/PyPlate/python_example.yaml, CloudFormation/MacrosExamples/S3Objects/example.yaml, CloudFormation/MacrosExamples/S3Objects/macro.yaml, CloudFormation/MacrosExamples/StackMetrics/example.yaml, CloudFormation/MacrosExamples/StackMetrics/macro.yaml, CloudFormation/MacrosExamples/StringFunctions/string.yaml, CloudFormation/MacrosExamples/StringFunctions/string_example.yaml, RainModules/api-resource.yml, RainModules/bucket-policy.yml, RainModules/bucket.yml, RainModules/cloudfront-nocache.yml, RainModules/cognito.yml, RainModules/load-balancer.yml, RainModules/rest-api.yml, RainModules/static-site.yml, RainModules/vpc.yml; 2 template(s) could not be linted (invocation failed or timed out, or `rain pkg` unavailable or failed): CloudFormation/StackSets/common-resources-stackset.yaml, CloudFormation/StackSets/common-resources.yaml",
         "raw_count": 14,
-        "duration_s": 19.4,
+        "duration_s": 20.8,
         "unparsed": [
           "CloudFormation/StackSets/common-resources-stackset.yaml",
           "CloudFormation/StackSets/common-resources.yaml"

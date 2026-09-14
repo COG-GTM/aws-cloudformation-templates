@@ -198,7 +198,11 @@ def build(data: dict) -> str:
     A("")
     twins = meta["generated_json_twins"]
     A(f"- {n_templates} CloudFormation templates (`.yaml`, `.yml`, `.json`, `.template` files with a `Resources` section) across {len(summary['open_by_service_directory'])} service directories with open findings. "
-      f"{meta['skipped_files']} candidate files were skipped because they are not CloudFormation templates (for example Lambda source, policy fragments, configuration files).")
+      f"{meta['skipped_files']} candidate files were skipped because they are not CloudFormation templates (for example Lambda source, policy fragments, configuration files)."
+      + (f" {len(meta['malformed_files'])} file(s) with a template extension are not well-formed JSON/YAML and were not assessed by any scanner: "
+         + ", ".join(f"`{p}`" for p in meta["malformed_files"]) + "." if meta.get("malformed_files") else " Every file with a template extension was well-formed JSON or YAML."))
+    if meta.get("custom_rule_failures"):
+        A("- Custom rules that raised an error and produced no result: " + "; ".join(f"`{p}` ({', '.join(ids)})" for p, ids in sorted(meta["custom_rule_failures"].items())) + ". Those template and rule pairs are coverage gaps.")
     A(f"- {len(twins)} JSON templates are generated twins of a YAML source in the same directory. YAML is the source of truth in this repository, so twins are not assessed separately (that would double every finding); "
       f"each twin is compared with its source and drift is reported as finding `CSA-CFG-002`. Use `--include-generated-json` to assess twins as independent templates."
       + (f" {len(meta.get('generated_json_not_compared', []))} twin(s) could not be compared because the twin or its source did not parse: "
@@ -349,12 +353,12 @@ def build(data: dict) -> str:
     A("- **Administrative CIDR ranges.** Remediated templates take the permitted management CIDR as a parameter with no open default. The Government must supply the Cloud Access Point or management network range at deployment.")
     A("- **KMS key ownership.** Encryption fixes use AWS-managed keys or a KMS key parameter. The Government must decide whether a customer-managed key with a documented rotation and key policy is required for each data classification (`CSA-KMS-001`, `CSA-ENC-002`, `CSA-ENC-010`).")
     A("- **Central logging destinations.** VPC Flow Logs, load balancer access logs, S3 access logs and API Gateway execution logs need a Government-owned log bucket or log group and retention period. The templates do not name one.")
-    A("- **Public load balancers and bastions.** Internet-facing web tiers and bastion hosts keep their intent. The Government must confirm that each is approved through the Cloud Access Point and boundary architecture, or replace bastions with Session Manager.")
+    A("- **Public load balancers and bastions.** Internet-facing web tiers and bastion hosts keep their intent. The Government must decide, for each, whether it is approved through the Cloud Access Point and boundary architecture or whether the bastion is replaced with Session Manager.")
     if any(f["custom_rule_id"] == "CSA-MON-002" for f in open_f):
         A("- **Lambda network placement.** Functions flagged `CSA-MON-002` run outside a VPC although the stack contains VPC data resources. Placing them in a VPC changes connectivity and requires endpoint or NAT design decisions.")
     A("- **Risk acceptance.** The Government must accept or reject the CAT III findings recommended for risk acceptance and any finding it considers not applicable to a given workload; `--dispositions` records those decisions in the next run.")
     if not n_tf:
-        A("- **Terraform.** Confirm whether a Terraform module exists on another branch or repository. None exists in this revision.")
+        A("- **Terraform.** None exists in this revision. The Government must state whether a Terraform module exists on another branch or repository so it can be brought into scope.")
     A("")
 
     # ------------------------------------------------------------------ 10
