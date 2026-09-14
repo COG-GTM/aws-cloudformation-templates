@@ -137,7 +137,7 @@ def build(data: dict) -> str:
         for fam in f["nist_control_families"]:
             by_family[fam].append(f)
 
-    templates_with_open = len({f["template_path"] for f in open_f})
+    templates_with_findings = len({f["template_path"] for f in findings})
     custom_count = sum(1 for f in findings if f["custom_rule_id"])
     tool_only = sum(1 for f in findings if not f["custom_rule_id"])
 
@@ -148,8 +148,8 @@ def build(data: dict) -> str:
     A("")
     tsha = meta.get("templates_commit_sha", "unknown")
     dirty = meta.get("templates_with_uncommitted_edits", 0)
-    provenance = (f"The templates were last changed in commit `{tsha}`; later commits on this branch do not change any assessed template."
-                  if tsha not in ("unknown", sha) else "")
+    provenance = (f"The assessed templates were last changed in commit `{tsha}`; later commits on this branch (including the commit that "
+                  f"adds these generated artifacts) do not change any assessed template." if tsha != "unknown" else "")
     if dirty:
         provenance += f" {dirty} assessed template(s) had uncommitted edits at scan time."
     A(f"Infrastructure-as-code baseline: CloudFormation templates in this repository at commit `{sha}` (branch `{meta['branch']}`), "
@@ -163,7 +163,7 @@ def build(data: dict) -> str:
       f"{scanner_sentence} Each result was normalized into one schema, mapped to NIST SP 800-53 Rev. 5 controls, the CIS AWS Foundations Benchmark v3.0 "
       f"where a recommendation exists, and a DoD Cloud Computing SRG topic area, and assigned a DISA-style severity (CAT I, CAT II, CAT III) with a one-line justification.")
     A("")
-    A(f"The scan produced {len(findings)} findings in {templates_with_open} of {n_templates} templates. {len(open_f)} findings are open, {len(remediated)} are marked Remediated in PR, "
+    A(f"The scan produced {len(findings)} findings in {templates_with_findings} of {n_templates} templates. {len(open_f)} findings are open, {len(remediated)} are marked Remediated in PR, "
       f"and {len(risk_acc)} are recommended for risk acceptance.")
     A("")
     rows = [[s, sev[s], sum(1 for f in remediated if f["severity"] == s), sum(1 for f in risk_acc if f["severity"] == s),

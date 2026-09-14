@@ -287,9 +287,37 @@ def load_template(path: Path) -> dict | None:
     return docs[0] if len(docs) == 1 and isinstance(docs[0], dict) else None
 
 
+FOREACH_PREFIX = "Fn::ForEach::"
+
+
+def expand_resources(resources: Any) -> dict[str, dict]:
+    """The Resources section with ``AWS::LanguageExtensions`` ``Fn::ForEach`` loops expanded.
+
+    ``Fn::ForEach::<Name>: [Identifier, Collection, {"Prefix${Identifier}Suffix": <resource>}]`` yields one resource
+    per collection item with ``${Identifier}`` substituted in the logical ID. When the collection is not a literal
+    list (for example a ``!Ref`` to a CommaDelimitedList parameter) the fragment is kept once with the ``${Identifier}``
+    placeholder in its logical ID, so its properties are still assessed. Loops nest."""
+    out: dict[str, dict] = {}
+    if not isinstance(resources, dict):
+        return out
+    for key, value in resources.items():
+        if not (isinstance(key, str) and key.startswith(FOREACH_PREFIX)):
+            if isinstance(value, dict):
+                out[key] = value
+            continue
+        if not (isinstance(value, list) and len(value) == 3 and isinstance(value[0], str) and isinstance(value[2], dict)):
+            continue
+        identifier, collection, fragment = value
+        items = [str(i) for i in collection] if isinstance(collection, list) and all(isinstance(i, (str, int)) for i in collection) else [f"${{{identifier}}}"]
+        placeholder = f"${{{identifier}}}"
+        for item in items:
+            for lid, res in expand_resources(fragment).items():
+                out[lid.replace(placeholder, item)] = res
+    return out
+
+
 def is_cfn_template(data: dict) -> bool:
-    resources = data.get("Resources")
-    return isinstance(resources, dict) and any(isinstance(r, dict) and "Type" in r for r in resources.values())
+    return any("Type" in r for r in expand_resources(data.get("Resources")).values())
 
 
 # --------------------------------------------------------------------------------------
@@ -324,7 +352,7 @@ class TemplateCtx:
 
     @property
     def resources(self) -> dict[str, dict]:
-        return {k: v for k, v in self.data.get("Resources", {}).items() if isinstance(v, dict)}
+        return expand_resources(self.data.get("Resources"))
 
     @property
     def parameters(self) -> dict[str, dict]:
@@ -1365,7 +1393,8 @@ def r_lambda_vpc(ctx: TemplateCtx):
 # ---- IAM least privilege --------------------------------------------------------------------
 
 READ_ONLY_PREFIXES = ("get", "list", "describe", "head", "lookup", "search", "query", "scan", "batchget", "select", "view", "check", "detect")
-IAM_PRINCIPAL_TYPES = ["AWS::IAM::Policy", "AWS::IAM::ManagedPolicy", "AWS::IAM::Role", "AWS::IAM::User", "AWS::IAM::Group"]
+IAM_POLICY_DOCUMENT_TYPES = {"AWS::IAM::Policy", "AWS::IAM::ManagedPolicy", "AWS::IAM::RolePolicy", "AWS::IAM::UserPolicy", "AWS::IAM::GroupPolicy"}
+IAM_PRINCIPAL_TYPES = sorted(IAM_POLICY_DOCUMENT_TYPES) + ["AWS::IAM::Role", "AWS::IAM::User", "AWS::IAM::Group"]
 
 
 def iter_policy_documents(ctx: TemplateCtx) -> Iterable[tuple[str, str, dict, int, str, str]]:
@@ -1377,7 +1406,7 @@ def iter_policy_documents(ctx: TemplateCtx) -> Iterable[tuple[str, str, dict, in
         rtype = rtype_of(res)
         p = props(res)
         docs: list[tuple[Any, str]] = []
-        if rtype in {"AWS::IAM::Policy", "AWS::IAM::ManagedPolicy"}:
+        if rtype in IAM_POLICY_DOCUMENT_TYPES:
             docs.append((p.get("PolicyDocument"), "PolicyDocument"))
         if rtype in {"AWS::IAM::Role", "AWS::IAM::User", "AWS::IAM::Group"}:
             for i, pol in enumerate(as_list(p.get("Policies"))):
@@ -1758,6 +1787,7 @@ class Finding:
     tags: list[str]
     risk_score: int = 0
     risk_rank: int = 0
+    hit_key: str = ""  # identity of the hit within the resource (ingress rule or policy statement) for rules that report one resource several times
 
     @property
     def tool_rule_id(self) -> str:
@@ -1824,6 +1854,7 @@ def finding_from_hit(rule_: Rule, ctx: TemplateCtx, hit: Hit) -> Finding:
         owner=OWNER_BY_AREA[rule_.area],
         target_date=TARGET_DATE_PLACEHOLDER[sev],
         tags=sorted(rule_.tags),
+        hit_key=hit.key or "",
     )
 
 
@@ -2290,16 +2321,48 @@ def normalize_external(hit: ExternalHit, repo: Path, resource_types: dict[tuple[
     return f
 
 
+# Scanner checks that name one port; they attach only to the custom ingress finding whose port range covers it.
+PORT_SPECIFIC_CHECKS = {"CKV_AWS_24": 22, "CKV_AWS_25": 3389, "CKV_AWS_260": 80}
+
+
+def ingress_key_covers_port(key: str, port: int) -> bool:
+    """True when an ``ingress_key`` (``cidr|from-to/proto``) spans ``port`` (a -1 or None bound means all ports)."""
+    m = re.fullmatch(r"[^|]*\|(-?\d+|None)-(-?\d+|None)/(.*)", key)
+    if not m:
+        return False
+    lo, hi, proto = m.group(1), m.group(2), m.group(3)
+    if proto not in ("tcp", "-1", "all"):
+        return False
+    lo_i = -1 if lo == "None" else int(lo)
+    hi_i = -1 if hi == "None" else int(hi)
+    return lo_i == -1 or hi_i == -1 or lo_i <= port <= hi_i
+
+
 def merge_external(custom: list[Finding], external: list[ExternalHit], repo: Path, resource_types: dict[tuple[str, str], str],
                    assessed: set[str]) -> list[Finding]:
     """Attach tool IDs to custom findings that cover the same weakness on the same resource; keep the rest as tool findings.
 
     Hits on files outside ``assessed`` (generated JSON twins, non-template files) are dropped.
     """
-    by_key: dict[tuple[str, str, str], Finding] = {}
+    # Every custom finding for (template, resource, rule); rules that report one resource several times (Hit.key)
+    # contribute several candidates and an external hit attaches only to the candidate on its own line, so tool
+    # evidence is never credited to a different ingress rule or policy statement.
+    by_key: dict[tuple[str, str, str], list[Finding]] = {}
     for f in custom:
         if f.custom_rule_id:
-            by_key[(f.template_path, f.resource_logical_id, f.custom_rule_id)] = f
+            by_key.setdefault((f.template_path, f.resource_logical_id, f.custom_rule_id), []).append(f)
+
+    def candidate(hit: ExternalHit, rule_id: str) -> Finding | None:
+        cands = by_key.get((hit.rel, hit.logical_id, rule_id), [])
+        if len(cands) == 1:
+            return cands[0]
+        port = PORT_SPECIFIC_CHECKS.get(hit.check_id)
+        if port is not None:
+            cands = [c for c in cands if ingress_key_covers_port(c.hit_key, port)]
+            if len(cands) == 1:
+                return cands[0]
+        same_line = [c for c in cands if c.evidence_line == hit.line]
+        return same_line[0] if len(same_line) == 1 else None
     extra: list[Finding] = []
     tool_only: dict[tuple[str, str, str], Finding] = {}
     seen: set[tuple[str, str, str]] = set()
@@ -2314,7 +2377,7 @@ def merge_external(custom: list[Finding], external: list[ExternalHit], repo: Pat
         merged = False
         for r in RULES:
             if hit.check_id in r.overlaps:
-                f = by_key.get((hit.rel, hit.logical_id, r.id))
+                f = candidate(hit, r.id)
                 if f is not None:
                     (f.checkov_ids if hit.source == "checkov" else f.cfn_nag_ids).append(hit.check_id)
                     if hit.source not in f.source:
@@ -2822,13 +2885,13 @@ def write_xlsx(path: Path, findings: list[Finding], summary: dict, before: dict 
         method_rows.append([f"Tool: {t.name}", f"version: {t.version}; status: {t.status}; raw results: {t.raw_count}; duration: {t.duration_s}s. {t.note}".strip()])
     method_rows += [
         ["Custom rule pack", f"{len(RULES) + 1} rules (CSA-*), including the generated-JSON drift check. Categories: encryption at rest, KMS key ownership, TLS in transit, public exposure, logging and monitoring, IAM least privilege, IMDSv2, secrets and credentials, backup/retention and deletion protection, template configuration drift."],
-        ["Normalization", "Every tool result is mapped to one schema. A Checkov/cfn_nag result that reports the same weakness on the same resource as a custom rule is merged into that finding (tool IDs kept in Tool/rule ID). A cfn_nag result that repeats an equivalent Checkov check on the same resource is attached to the Checkov finding. Other tool results become their own findings with keyword-based control mapping."],
+        ["Normalization", "Every tool result is mapped to one schema. A Checkov/cfn_nag result that reports the same weakness on the same resource as a custom rule is merged into that finding (tool IDs kept in Tool/rule ID); when the custom rule reported that resource several times (one finding per ingress rule or policy statement) the tool result attaches only to the finding for the same port or source line, otherwise it stays a tool finding. A cfn_nag result that repeats an equivalent Checkov check on the same resource is attached to the Checkov finding. Other tool results become their own findings with keyword-based control mapping."],
         ["Severity model", "DISA CAT I: direct and immediate loss of confidentiality, integrity or availability. CAT II: potential loss. CAT III: degraded protection. Each rule carries a default CAT that specific evidence may lower (for example an open CIDR that comes from a parameter default is CAT II rather than CAT I)."],
         ["Risk rank", "Rank 1 is highest risk. Score = severity base (CAT I 300 / CAT II 200 / CAT III 100) + exposure 40 + credential 30 + data store 20 + 10 per confirming external tool + 5 for custom-rule evidence + 3 for core service directories. Open findings rank before closed ones."],
         ["Control mappings", "NIST SP 800-53 Rev. 5 control IDs are assigned per rule. CIS AWS Foundations Benchmark v3.0.0 recommendation IDs are included only where the AWS Security Hub CIS v3.0.0 mapping confirms a matching control; otherwise the CIS field is blank. DoD Cloud Computing SRG areas use the SRG section names and Cloud Computing Mission Owner SRG requirement IDs."],
         ["cfn-lint handling", "Only Error-level results are findings (CM-2/CM-6, CAT III). Warning and informational messages are counted in the tool note. The repository .cfnlintrc (ignored checks and templates) is honored."],
         ["Severity policy", "CAT I is assigned only by the custom rule pack, which verifies the exact condition on the parsed template (for example an ingress rule to TCP/22 from 0.0.0.0/0 with no parameter override). Checkov and cfn_nag hits that confirm such a condition are merged into the custom finding and listed as corroborating tool IDs. Tool-only hits that rely on pattern heuristics (for example secret-like strings in user data, or wildcard detection that also matches scoped service wildcards) are capped at CAT II and carry the tool's own justification."],
-        ["Known limits", "Static analysis of templates only: no deployed-account evidence, no AWS Config or Security Hub data. Parameter values are evaluated from Defaults; values supplied at deploy time are unknown. Intrinsic functions other than Ref/Fn::If defaults are treated as unresolved and never generate a finding on their own. Nested-stack and macro-generated resources are not expanded. Template intent (for example an Internet-facing web tier) is inferred, not confirmed."],
+        ["Known limits", "Static analysis of templates only: no deployed-account evidence, no AWS Config or Security Hub data. Parameter values are evaluated from Defaults; values supplied at deploy time are unknown. Intrinsic functions other than Ref/Fn::If defaults are treated as unresolved and never generate a finding on their own. AWS::LanguageExtensions Fn::ForEach loops over literal lists are expanded into their resources (a loop over a parameter is assessed once with the ${Identifier} placeholder in its logical ID); nested-stack and macro-generated resources are not expanded. Template intent (for example an Internet-facing web tier) is inferred, not confirmed."],
         ["Dispositions", "Open / Remediated in PR / Risk acceptance recommended / Not applicable. 'Remediated in PR' is assigned automatically when a baseline findings.json (--baseline) contains a finding that the current run no longer detects and every tool that produced it ran again on that template; when a tool was skipped, failed or could not process the template the baseline disposition is carried forward with a 'Not re-evaluated' note. Government overrides can be supplied with --dispositions."],
     ]
     for r in method_rows:
@@ -2871,8 +2934,10 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("--skip-checkov", action="store_true")
     ap.add_argument("--skip-cfn-nag", action="store_true")
     ap.add_argument("--skip-cfn-lint", action="store_true")
-    ap.add_argument("--baseline", help="previous findings.json; findings that disappear are recorded as 'Remediated in PR'")
-    ap.add_argument("--dispositions", help="JSON file {finding_id: {disposition, note}} with Government disposition overrides")
+    ap.add_argument("--baseline", help="previous findings.json (path relative to the current directory, not --repo-root); "
+                                        "findings that disappear are recorded as 'Remediated in PR'")
+    ap.add_argument("--dispositions", help="JSON file {finding_id: {disposition, note}} with Government disposition overrides "
+                                            "(path relative to the current directory, not --repo-root)")
     ap.add_argument("--include-generated-json", action="store_true",
                     help="also assess .json templates that have a YAML sibling (by default they are only checked for drift)")
     ap.add_argument("--fail-on-incomplete", action="store_true",
