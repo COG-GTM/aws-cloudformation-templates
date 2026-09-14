@@ -16,7 +16,10 @@ Usage:
         [--skip-checkov] [--skip-cfn-nag] [--skip-cfn-lint]
         [--baseline security-assessment/findings.json]   # previous run; findings that no longer
                                                          # appear are carried forward as "Remediated in PR"
+                                                         # when every tool that produced them ran again
         [--dispositions security-assessment/dispositions.json]  # optional Government overrides
+        [--fail-on-incomplete]                           # exit 2 when a scanner was skipped/failed or
+                                                         # left templates unprocessed (CI gate)
 """
 from __future__ import annotations
 
@@ -742,16 +745,31 @@ def bucket_policies_for(ctx: TemplateCtx, bucket_lid: str) -> list[tuple[str, di
 
 
 def policy_denies_insecure_transport(doc: Any) -> bool:
+    """True only for a bucket-wide deny: Principal *, Action s3:* (or *), bucket and object ARNs, aws:SecureTransport=false.
+
+    Statement scopes are combined, so two deny statements that split bucket and object ARNs also qualify.
+    """
+    bucket = objects = False
     for s in iter_statements(doc):
-        if s.get("Effect") != "Deny":
+        if s.get("Effect") != "Deny" or not principal_is_public(s.get("Principal")):
             continue
         cond = s.get("Condition")
-        if not isinstance(cond, dict):
+        b = cond.get("Bool") if isinstance(cond, dict) else None
+        if not (isinstance(b, dict) and str(b.get("aws:SecureTransport", "")).lower() == "false"):
             continue
-        b = cond.get("Bool") or {}
-        if isinstance(b, dict) and str(b.get("aws:SecureTransport", "")).lower() == "false":
-            return True
-    return False
+        if len(cond) > 1:
+            continue  # further conditions narrow the deny to a subset of requests
+        if not any(a in {"*", "s3:*"} for a in stmt_actions(s)):
+            continue
+        for r in stmt_resources(s):
+            rendered = r if isinstance(r, str) else json.dumps(r, default=str)
+            if rendered.strip() == "*":
+                return True
+            if "/*" in rendered:
+                objects = True
+            else:
+                bucket = True
+    return bucket and objects
 
 
 @rule(id="CSA-TLS-001", title="S3 bucket does not deny non-TLS (aws:SecureTransport=false) requests",
@@ -788,10 +806,10 @@ def r_lb_cleartext(ctx: TemplateCtx):
         if proto.upper() in {"HTTP", "TCP", "UDP", "TCP_UDP"} and not listener_redirects_to_https(p):
             yield Hit(lid, rtype_of(res), ctx.prop_line(lid, res, "Properties", "Protocol"), f"Protocol={proto} without HTTPS redirect")
     for lid, res in ctx.by_type("AWS::ElasticLoadBalancing::LoadBalancer"):
-        for i, l in enumerate(as_list(props(res).get("Listeners"))):
-            if isinstance(l, dict) and str(l.get("Protocol", "")).upper() in {"HTTP", "TCP"}:
-                yield Hit(lid, rtype_of(res), node_line(l, ctx.prop_line(lid, res, "Properties", "Listeners")),
-                          f"Listeners[{i}].Protocol={l.get('Protocol')} (clear text)")
+        for i, lst in enumerate(as_list(props(res).get("Listeners"))):
+            if isinstance(lst, dict) and str(lst.get("Protocol", "")).upper() in {"HTTP", "TCP"}:
+                yield Hit(lid, rtype_of(res), node_line(lst, ctx.prop_line(lid, res, "Properties", "Listeners")),
+                          f"Listeners[{i}].Protocol={lst.get('Protocol')} (clear text)")
                 break
 
 
@@ -874,12 +892,20 @@ def r_edge_tls(ctx: TemplateCtx):
         dcb = cfg.get("DefaultCacheBehavior") or {}
         vpp = dcb.get("ViewerProtocolPolicy") if isinstance(dcb, dict) else None
         cert = cfg.get("ViewerCertificate") or {}
-        mpv = cert.get("MinimumProtocolVersion") if isinstance(cert, dict) else None
+        mpv_raw = cert.get("MinimumProtocolVersion") if isinstance(cert, dict) else None
+        mpv_values = [v for v in ctx.resolve(mpv_raw) if v is not UNKNOWN] if mpv_raw is not None else []
+        weak = [str(v) for v in mpv_values if not str(v).startswith(("TLSv1.2", "TLSv1.3"))]
         default_cert = isinstance(cert, dict) and is_true(cert.get("CloudFrontDefaultCertificate"))
+        custom_cert = isinstance(cert, dict) and ("AcmCertificateArn" in cert or "IamCertificateId" in cert)
         if vpp == "allow-all":
             yield Hit(lid, rtype_of(res), ctx.resource_line(lid, res), "DefaultCacheBehavior.ViewerProtocolPolicy=allow-all")
-        elif default_cert or (mpv is not None and not str(mpv).startswith(("TLSv1.2", "TLSv1.3"))):
-            yield Hit(lid, rtype_of(res), ctx.resource_line(lid, res), f"ViewerCertificate MinimumProtocolVersion={mpv or 'default (TLSv1 with the CloudFront default certificate)'}")
+        elif default_cert or not cert:
+            yield Hit(lid, rtype_of(res), ctx.resource_line(lid, res), "ViewerCertificate MinimumProtocolVersion=default (TLSv1 with the CloudFront default certificate)")
+        elif custom_cert and mpv_raw is None:
+            yield Hit(lid, rtype_of(res), ctx.resource_line(lid, res), "ViewerCertificate has a custom certificate but no MinimumProtocolVersion (service default applies)")
+        elif weak:
+            via = f" (parameter {ctx.param_for(mpv_raw)} default)" if ctx.param_for(mpv_raw) else ""
+            yield Hit(lid, rtype_of(res), ctx.resource_line(lid, res), f"ViewerCertificate MinimumProtocolVersion={weak[0]}{via}")
     for lid, res in ctx.by_type("AWS::Elasticsearch::Domain", "AWS::OpenSearchService::Domain"):
         o = props(res).get("DomainEndpointOptions") or {}
         if not (isinstance(o, dict) and all_true(ctx, o.get("EnforceHTTPS")) and str(o.get("TLSSecurityPolicy", "")).startswith("Policy-Min-TLS-1-2")):
@@ -1706,8 +1732,12 @@ class Finding:
         return d
 
 
-def make_finding_id(rule_id: str, rel: str, resource: str) -> str:
+def make_finding_id(rule_id: str, rel: str, resource: str, discriminator: str = "") -> str:
+    """Stable ID from rule, template and resource. ``discriminator`` (the hit detail, which never
+    contains line numbers) separates several hits of one rule on one resource."""
     h = hashlib.sha1(f"{rule_id}|{rel}|{resource}".encode()).hexdigest()[:6].upper()
+    if discriminator:
+        h += "-" + hashlib.sha1(discriminator.encode()).hexdigest()[:4].upper()
     return f"{rule_id}-{h}"
 
 
@@ -1716,11 +1746,11 @@ def service_dir_of(rel: str) -> str:
     return parts[0] if len(parts) > 1 else "(root)"
 
 
-def finding_from_hit(rule_: Rule, ctx: TemplateCtx, hit: Hit) -> Finding:
+def finding_from_hit(rule_: Rule, ctx: TemplateCtx, hit: Hit, discriminator: str = "") -> Finding:
     sev = hit.severity or rule_.severity
     line = hit.line or 1
     return Finding(
-        finding_id=make_finding_id(rule_.id, ctx.rel, hit.logical_id),
+        finding_id=make_finding_id(rule_.id, ctx.rel, hit.logical_id, discriminator),
         template_path=ctx.rel,
         service_directory=ctx.service_dir,
         resource_logical_id=hit.logical_id,
@@ -1763,7 +1793,8 @@ class ToolResult:
     note: str = ""
     raw_count: int = 0
     duration_s: float = 0.0
-    unparsed: list[str] = field(default_factory=list)
+    unparsed: list[str] = field(default_factory=list)   # templates the tool should have covered but did not
+    excluded: list[str] = field(default_factory=list)   # templates deliberately out of the tool's scope
 
 
 def run(cmd: list[str], cwd: Path, timeout: int = 3600) -> subprocess.CompletedProcess:
@@ -1891,8 +1922,8 @@ def classify_external(check_id: str, name: str, source: str) -> tuple[list[str],
 
 def resource_line_in_file(lines: list[str], logical_id: str) -> int:
     rx = re.compile(rf'^\s*"?{re.escape(logical_id)}"?\s*:')
-    for i, l in enumerate(lines):
-        if rx.search(l):
+    for i, text in enumerate(lines):
+        if rx.search(text):
             return i + 1
     return 1
 
@@ -2065,6 +2096,7 @@ def run_cfn_lint(repo: Path, templates: list[Path], tr: ToolResult) -> tuple[lis
     plain: list[Path] = []
     rain_templates: list[Path] = []
     excluded: list[str] = []
+    failed: list[str] = []
     for t in templates:
         rel = t.relative_to(repo).as_posix()
         if "MacrosExamples/" in rel or rel.startswith("RainModules/"):
@@ -2102,30 +2134,35 @@ def run_cfn_lint(repo: Path, templates: list[Path], tr: ToolResult) -> tuple[lis
             cp = run(base + ["--"] + chunk, repo, timeout=1800)
         except subprocess.TimeoutExpired:
             tr.note += f" batch {i} timed out;"
+            failed += [Path(c).as_posix() for c in chunk]
             continue
         collect(parse_json_prefix(cp.stdout, "["))
     for t in rain_templates:
         rel = t.relative_to(repo).as_posix()
         if not rain:
-            excluded.append(rel)
+            failed.append(rel)
             continue
         try:
             pkg = run([rain, "pkg", "-x", rel], repo, timeout=600)
             if pkg.returncode != 0:
-                excluded.append(rel)
+                failed.append(rel)
                 continue
-            cp = subprocess.run(base + ["-"], cwd=str(repo), input=pkg.stdout, capture_output=True, text=True, timeout=600, check=False)
+            cp = subprocess.run(base, cwd=str(repo), input=pkg.stdout, capture_output=True, text=True, timeout=600, check=False)
         except subprocess.TimeoutExpired:
-            excluded.append(rel)
+            failed.append(rel)
             continue
         collect(parse_json_prefix(cp.stdout, "["), rel)
     tr.duration_s = round(time.time() - t0, 1)
     tr.status, tr.raw_count = "ran", len(hits)
-    tr.unparsed = excluded
+    tr.unparsed = failed
+    tr.excluded = excluded
     note = f"{warnings} warning/informational messages not treated as findings"
     if excluded:
-        note += (f"; {len(excluded)} template(s) not linted per the repository lint convention (macro examples, Rain module fragments, "
-                 f"and templates with !Rain:: directives when `rain` is not installed): " + ", ".join(excluded))
+        note += (f"; {len(excluded)} template(s) not linted per the repository lint convention (macro examples and Rain module fragments): "
+                 + ", ".join(excluded))
+    if failed:
+        note += (f"; {len(failed)} template(s) with !Rain:: directives could not be linted (`rain pkg` unavailable, failed or timed out): "
+                 + ", ".join(failed))
     tr.note = (tr.note + " " + note).strip()
     return hits, warnings
 
@@ -2245,20 +2282,49 @@ def rank(findings: list[Finding]) -> None:
     findings.sort(key=lambda f: f.risk_rank)
 
 
-def apply_baseline(findings: list[Finding], baseline_path: Path | None, dispositions_path: Path | None) -> tuple[list[Finding], dict | None]:
+def coverage_gap(f: Finding, tools: list[ToolResult], parsed: set[str]) -> str:
+    """Why the current run could not re-evaluate ``f``; empty when every source that produced it was rerun on its template."""
+    if f.template_path not in parsed:
+        return "its template was not parsed by the custom rule pack in this run"
+    by_name = {t.name: t for t in tools}
+    for src in f.source.split("+"):
+        if src == "custom":
+            continue
+        t = by_name.get(src)
+        if t is None or t.status != "ran":
+            reason = t.note if t and t.note else "not configured"
+            return f"{src} did not run in this run ({reason})"
+        if f.template_path in t.unparsed:
+            return f"{src} could not process the template in this run"
+    return ""
+
+
+def apply_baseline(findings: list[Finding], baseline_path: Path | None, dispositions_path: Path | None,
+                   tools: list[ToolResult] | None = None, parsed: set[str] | None = None) -> tuple[list[Finding], dict | None]:
+    """Carry baseline findings that are absent from the current run.
+
+    A missing finding is ``Remediated in PR`` only when every tool that produced it ran again on
+    the same template. When a scanner was skipped, failed or could not parse that template the
+    finding keeps its previous disposition and its note records that it was not re-evaluated.
+    """
     before: dict | None = None
     current_ids = {f.finding_id for f in findings}
     if baseline_path and baseline_path.exists():
         base = json.loads(baseline_path.read_text())
         before = base.get("summary")
+        base_sha = str(base.get("metadata", {}).get("commit_sha", "?"))[:12]
         for d in base.get("findings", []):
             if d["finding_id"] in current_ids:
                 continue
             if d.get("disposition") in {"Not applicable"}:
                 continue
             carried = Finding(**{k: v for k, v in d.items() if k in {fl.name for fl in fields(Finding)}})
-            carried.disposition = "Remediated in PR"
-            carried.disposition_note = f"Finding no longer detected after remediation (baseline commit {base.get('metadata', {}).get('commit_sha', '?')[:12]})."
+            gap = coverage_gap(carried, tools or [], parsed if parsed is not None else {carried.template_path})
+            if gap:
+                carried.disposition_note = f"Not re-evaluated: {gap}; disposition carried forward from baseline commit {base_sha}."
+            else:
+                carried.disposition = "Remediated in PR"
+                carried.disposition_note = f"Finding no longer detected after remediation (baseline commit {base_sha})."
             findings.append(carried)
     if dispositions_path and dispositions_path.exists():
         overrides = json.loads(dispositions_path.read_text())
@@ -2350,17 +2416,20 @@ def check_generated_twins(repo: Path, twins: dict[Path, Path]) -> list[Finding]:
     return out
 
 
-def assess_templates(repo: Path, templates: list[Path]) -> tuple[list[Finding], dict[tuple[str, str], str], Counter, Counter]:
+def assess_templates(repo: Path, templates: list[Path]) -> tuple[list[Finding], dict[tuple[str, str], str], Counter, Counter, set[str]]:
+    """Returns (findings, resource types, type counts, hits per rule, templates the rule pack parsed)."""
     findings: list[Finding] = []
     resource_types: dict[tuple[str, str], str] = {}
     type_counts: Counter = Counter()
     rule_hits: Counter = Counter()
+    parsed: set[str] = set()
     for t in templates:
         rel = str(t.relative_to(repo).as_posix())
         text = t.read_text(encoding="utf-8", errors="replace")
         data = load_template(t)
         if data is None:
             continue
+        parsed.add(rel)
         ctx = TemplateCtx(path=t, rel=rel, text=text, lines=text.splitlines(), data=data, service_dir=service_dir_of(rel))
         for lid, res in ctx.resources.items():
             rt = rtype_of(res)
@@ -2369,12 +2438,16 @@ def assess_templates(repo: Path, templates: list[Path]) -> tuple[list[Finding], 
         for r in RULES:
             assert r.check is not None
             try:
-                for hit in r.check(ctx):
-                    findings.append(finding_from_hit(r, ctx, hit))
-                    rule_hits[r.id] += 1
+                hits = list(r.check(ctx))
             except Exception as e:  # noqa: BLE001 - a rule bug must not abort the assessment
                 print(f"  [warn] rule {r.id} failed on {rel}: {e}", file=sys.stderr)
-    return findings, resource_types, type_counts, rule_hits
+                continue
+            per_resource = Counter(h.logical_id for h in hits)
+            for hit in hits:
+                # Several hits of one rule on one resource (e.g. two open ingress rules) get distinct IDs.
+                findings.append(finding_from_hit(r, ctx, hit, hit.detail if per_resource[hit.logical_id] > 1 else ""))
+                rule_hits[r.id] += 1
+    return findings, resource_types, type_counts, rule_hits, parsed
 
 
 # --------------------------------------------------------------------------------------
@@ -2434,6 +2507,21 @@ def git_info(repo: Path) -> tuple[str, str]:
         return sha or "unknown", branch or "unknown"
     except OSError:
         return "unknown", "unknown"
+
+
+def template_revision(repo: Path, paths: list[str]) -> tuple[str, int]:
+    """(last commit that changed any assessed template, number of assessed templates with uncommitted edits).
+
+    HEAD identifies the checkout; this identifies the template set the findings describe, which does not move
+    when only assessment artifacts are committed on top."""
+    if not paths:
+        return "unknown", 0
+    try:
+        last = run(["git", "log", "-1", "--format=%H", "--", *paths], repo).stdout.strip()
+        dirty = run(["git", "status", "--porcelain", "--", *paths], repo).stdout.splitlines()
+        return last or "unknown", len(dirty)
+    except OSError:
+        return "unknown", 0
 
 
 # --------------------------------------------------------------------------------------
@@ -2504,6 +2592,8 @@ def write_xlsx(path: Path, findings: list[Finding], summary: dict, before: dict 
     ws2.append(["Scan date (UTC)", meta["scan_date"]])
     ws2.append(["Commit SHA", meta["commit_sha"]])
     ws2.append(["Branch", meta["branch"]])
+    ws2.append(["Templates last changed in commit", meta["templates_commit_sha"]])
+    ws2.append(["Templates with uncommitted edits at scan time", meta["templates_with_uncommitted_edits"]])
     ws2.append(["Templates assessed", summary["templates_assessed"]])
     ws2.append(["Terraform files assessed", meta["terraform_files"]])
     ws2.append(["Total findings (all dispositions)", summary["total_findings"]])
@@ -2580,6 +2670,8 @@ def write_xlsx(path: Path, findings: list[Finding], summary: dict, before: dict 
     ws5.append(["Item", "Detail"])
     method_rows = [
         ["Scan date (UTC)", meta["scan_date"]], ["Commit SHA", meta["commit_sha"]], ["Branch", meta["branch"]],
+        ["Templates last changed in commit", meta["templates_commit_sha"]],
+        ["Templates with uncommitted edits at scan time", meta["templates_with_uncommitted_edits"]],
         ["Runner", f"scripts/cloud_security_assessment.py (Python {platform.python_version()}, PyYAML {yaml.__version__})"],
         ["Templates discovered", f"{summary['templates_assessed']} CloudFormation templates (.yaml/.yml/.json/.template with a Resources section)"],
         ["Files skipped (not CloudFormation)", str(meta["skipped_files"])],
@@ -2597,7 +2689,7 @@ def write_xlsx(path: Path, findings: list[Finding], summary: dict, before: dict 
         ["cfn-lint handling", "Only Error-level results are findings (CM-2/CM-6, CAT III). Warning and informational messages are counted in the tool note. The repository .cfnlintrc (ignored checks and templates) is honored."],
         ["Severity policy", "CAT I is assigned only by the custom rule pack, which verifies the exact condition on the parsed template (for example an ingress rule to TCP/22 from 0.0.0.0/0 with no parameter override). Checkov and cfn_nag hits that confirm such a condition are merged into the custom finding and listed as corroborating tool IDs. Tool-only hits that rely on pattern heuristics (for example secret-like strings in user data, or wildcard detection that also matches scoped service wildcards) are capped at CAT II and carry the tool's own justification."],
         ["Known limits", "Static analysis of templates only: no deployed-account evidence, no AWS Config or Security Hub data. Parameter values are evaluated from Defaults; values supplied at deploy time are unknown. Intrinsic functions other than Ref/Fn::If defaults are treated as unresolved and never generate a finding on their own. Nested-stack and macro-generated resources are not expanded. Template intent (for example an Internet-facing web tier) is inferred, not confirmed."],
-        ["Dispositions", "Open / Remediated in PR / Risk acceptance recommended / Not applicable. 'Remediated in PR' is assigned automatically when a baseline findings.json (--baseline) contains a finding that the current run no longer detects. Government overrides can be supplied with --dispositions."],
+        ["Dispositions", "Open / Remediated in PR / Risk acceptance recommended / Not applicable. 'Remediated in PR' is assigned automatically when a baseline findings.json (--baseline) contains a finding that the current run no longer detects and every tool that produced it ran again on that template; when a tool was skipped, failed or could not process the template the baseline disposition is carried forward with a 'Not re-evaluated' note. Government overrides can be supplied with --dispositions."],
     ]
     for r in method_rows:
         ws5.append(r)
@@ -2643,6 +2735,8 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("--dispositions", help="JSON file {finding_id: {disposition, note}} with Government disposition overrides")
     ap.add_argument("--include-generated-json", action="store_true",
                     help="also assess .json templates that have a YAML sibling (by default they are only checked for drift)")
+    ap.add_argument("--fail-on-incomplete", action="store_true",
+                    help="exit 2 when a scanner did not run, failed, or left templates unprocessed (for CI gates)")
     args = ap.parse_args(argv)
 
     repo = Path(args.repo_root).resolve()
@@ -2657,9 +2751,10 @@ def main(argv: list[str] | None = None) -> int:
           f"{len(twins)} generated JSON twins of YAML sources; skipped {len(skipped)} non-template files")
 
     print("Running custom rule pack ...")
-    findings, resource_types, type_counts, rule_hits = assess_templates(repo, templates)
+    findings, resource_types, type_counts, rule_hits, parsed = assess_templates(repo, templates)
     twin_findings = check_generated_twins(repo, twins)
     findings += twin_findings
+    parsed |= {str(g.relative_to(repo).as_posix()) for g in twins}
     rule_hits[TWIN_RULE.id] += len(twin_findings)
     print(f"  custom rule findings: {len(findings)} ({len(twin_findings)} generated JSON files differ from their YAML source)")
 
@@ -2687,14 +2782,17 @@ def main(argv: list[str] | None = None) -> int:
     tools.append(tr)
 
     assessed = {str(t.relative_to(repo).as_posix()) for t in templates} | {str(t.relative_to(repo).as_posix()) for t in terraform}
+    templates_sha, templates_dirty = template_revision(repo, sorted(assessed))
     findings = merge_external(findings, external, repo, resource_types, assessed)
-    findings, before = apply_baseline(findings, Path(args.baseline) if args.baseline else None, Path(args.dispositions) if args.dispositions else None)
+    findings, before = apply_baseline(findings, Path(args.baseline) if args.baseline else None, Path(args.dispositions) if args.dispositions else None,
+                                      tools, parsed)
     rank(findings)
     summary = summarize(findings, templates)
     coverage = control_coverage(findings, len(templates))
 
     meta = {
         "scan_date": scan_date, "commit_sha": sha, "branch": branch, "repo_root": str(repo),
+        "templates_commit_sha": templates_sha, "templates_with_uncommitted_edits": templates_dirty,
         "templates_assessed": len(templates), "terraform_files": len(terraform), "skipped_files": len(skipped),
         "generated_json_twins": {str(g.relative_to(repo).as_posix()): str(y.relative_to(repo).as_posix()) for g, y in sorted(twins.items())},
         "generated_json_assessed": args.include_generated_json,
@@ -2712,6 +2810,14 @@ def main(argv: list[str] | None = None) -> int:
     (out_dir / "findings.json").write_text(json.dumps(payload, indent=2, default=str) + "\n")
     write_xlsx(out_dir / "Cloud-Security-Findings-Tracker.xlsx", findings, summary, before, coverage, meta, tools)
     console_summary(summary, before, tools, findings, out_dir)
+    incomplete = [f"{t.name}: {t.status}" for t in tools if t.status != "ran"] + [f"{t.name}: {len(t.unparsed)} template(s) not processed" for t in tools if t.unparsed]
+    unparsed_custom = sorted(t for t in meta["template_paths"] if t not in parsed)
+    if unparsed_custom:
+        incomplete.append(f"custom rule pack: {len(unparsed_custom)} template(s) could not be parsed: " + ", ".join(unparsed_custom))
+    if incomplete:
+        print("Coverage gaps: " + "; ".join(incomplete))
+        if args.fail_on_incomplete:
+            return 2
     return 0
 
 

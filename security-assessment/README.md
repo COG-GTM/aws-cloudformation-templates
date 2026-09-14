@@ -29,10 +29,11 @@ Useful options for `scripts/cloud_security_assessment.py`:
 
 | Option | Purpose |
 |---|---|
-| `--baseline <findings.json>` | Compare with a previous run. Findings that no longer appear are carried forward with disposition `Remediated in PR`; `Summary` gains before/after severity counts. Used on the remediation branch. |
+| `--baseline <findings.json>` | Compare with a previous run. Findings that no longer appear are carried forward with disposition `Remediated in PR` when every tool that produced them ran again on that template; if a tool was skipped, failed or could not process the template, the baseline disposition is kept and the note reads `Not re-evaluated`. `Summary` gains before/after severity counts. Used on the remediation branch. |
 | `--dispositions <file.json>` | Apply Government dispositions: `{"<finding id>": {"disposition": "Risk acceptance recommended", "note": "..."}}`. Allowed values: `Open`, `Remediated in PR`, `Risk acceptance recommended`, `Not applicable`. |
 | `--include-generated-json` | Assess generated JSON twins as independent templates (by default they are compared with their YAML source and only drift is reported). |
 | `--skip-checkov`, `--skip-cfn-nag`, `--skip-cfn-lint` | Skip a tool. The `Method` sheet records what ran. |
+| `--fail-on-incomplete` | Exit 2 when a scanner was skipped, failed, or left templates unprocessed, so a CI gate cannot pass on an incomplete assessment. The console always prints the coverage gaps. |
 | `--out-dir` | Output directory (default `security-assessment`). |
 
 Terraform: the runner scans any `.tf` files it finds with Checkov (`--framework terraform`). No Terraform sources exist in this revision, so that part of the method is recorded as not applicable.

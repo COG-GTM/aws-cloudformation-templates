@@ -97,6 +97,33 @@ def build(data: dict) -> str:
     n_templates = meta["templates_assessed"]
     sha = meta["commit_sha"]
     top = sorted(open_f, key=lambda f: f["risk_rank"])[:20]
+    n_tf = meta.get("terraform_files", 0)
+
+    def dominant(sev_name: str, k: int = 4) -> str:
+        """Comma list of the most frequent open finding titles at a severity, lower-cased for prose."""
+        c = Counter(f["title"] for f in open_f if f["severity"] == sev_name)
+        return "; ".join(f"{t[0].lower() + t[1:]} ({n})" for t, n in c.most_common(k))
+
+    ran = [t for t in meta["tools"] if t["status"] == "ran"]
+    not_ran = [t for t in meta["tools"] if t["status"] != "ran"]
+    partial = [t for t in ran if t["unparsed"]]
+    tool_names = {"checkov": "Checkov", "cfn_nag": "cfn_nag", "cfn-lint": "cfn-lint"}
+
+    def tool_label(t: dict) -> str:
+        v = t["version"]
+        return v if v.lower().startswith(tool_names[t["name"]].lower()) else f"{tool_names[t['name']]} {v}"
+
+    scanner_sentence = (f"{len(ran)} open-source scanner{'s' if len(ran) != 1 else ''} ({', '.join(tool_label(t) for t in ran)}) and a custom rule pack of {len(rules)} checks were run against every template."
+                        if ran else f"A custom rule pack of {len(rules)} checks was run against every template; no external scanner ran.")
+    if not_ran:
+        scanner_sentence += " " + "; ".join(f"{tool_names[t['name']]} was {t['status']} ({t['note']})" for t in not_ran) + "."
+    if partial:
+        scanner_sentence += " " + "; ".join(f"{tool_names[t['name']]} did not process {len(t['unparsed'])} template(s) (listed in the Method sheet)" for t in partial) + "."
+    if n_tf:
+        tf_scope = (f"{n_tf} Terraform `.tf` file(s) were discovered and scanned with Checkov." if tools["checkov"]["status"] == "ran"
+                    else f"{n_tf} Terraform `.tf` file(s) were discovered but not scanned because Checkov was {tools['checkov']['status']}.")
+    else:
+        tf_scope = "No Terraform sources exist in this revision, so the Terraform portion of the tasking is not applicable. The runner scans `.tf` files automatically when they are added."
     cat1_open = [f for f in open_f if f["severity"] == csa.CAT_I]
 
     by_family: dict[str, list[dict]] = defaultdict(list)
@@ -113,16 +140,21 @@ def build(data: dict) -> str:
 
     A("# Cloud Security Assessment Report")
     A("")
+    tsha = meta.get("templates_commit_sha", "unknown")
+    dirty = meta.get("templates_with_uncommitted_edits", 0)
+    provenance = (f"The templates were last changed in commit `{tsha}`; later commits on this branch do not change any assessed template."
+                  if tsha not in ("unknown", sha) else "")
+    if dirty:
+        provenance += f" {dirty} assessed template(s) had uncommitted edits at scan time."
     A(f"Infrastructure-as-code baseline: CloudFormation templates in this repository at commit `{sha}` (branch `{meta['branch']}`), "
-      f"assessed {meta['scan_date']}. Prepared in the form of CDRL A008, Cloud Security Assessment Report, for the Government and the system owner.")
+      f"assessed {meta['scan_date']}. {provenance} Prepared in the form of CDRL A008, Cloud Security Assessment Report, for the Government and the system owner.".replace("  ", " "))
     A("")
 
     # ------------------------------------------------------------------ 1
     A("## 1. Executive summary")
     A("")
     A(f"This assessment treats the {n_templates} CloudFormation templates in the repository as the infrastructure-as-code baseline for a set of Government cloud workloads. "
-      f"Three open-source scanners (Checkov {tools['checkov']['version']}, cfn_nag {tools['cfn_nag']['version']}, {tools['cfn-lint']['version']}) and a custom rule pack of "
-      f"{len(rules)} checks were run against every template. Each result was normalized into one schema, mapped to NIST SP 800-53 Rev. 5 controls, the CIS AWS Foundations Benchmark v3.0 "
+      f"{scanner_sentence} Each result was normalized into one schema, mapped to NIST SP 800-53 Rev. 5 controls, the CIS AWS Foundations Benchmark v3.0 "
       f"where a recommendation exists, and a DoD Cloud Computing SRG topic area, and assigned a DISA-style severity (CAT I, CAT II, CAT III) with a one-line justification.")
     A("")
     A(f"The scan produced {len(findings)} findings in {templates_with_open} of {n_templates} templates. {len(open_f)} findings are open, {len(remediated)} are marked Remediated in PR, "
@@ -143,12 +175,14 @@ def build(data: dict) -> str:
         A("")
     A("Key results:")
     A("")
-    A(f"- {sev[csa.CAT_I]} open CAT I findings. All of them are network exposure or unencrypted data-at-rest conditions that the custom rule pack verified on the parsed template. "
-      f"They are listed in section 3 and are the remediation targets for PR 2.")
-    A(f"- {sev[csa.CAT_II]} open CAT II findings, dominated by missing IMDSv2 enforcement, missing TLS-only bucket policies, security-group ingress that defaults to an open CIDR through a parameter, and IAM write actions on `Resource: *`.")
-    A(f"- {sev[csa.CAT_III]} open CAT III findings, dominated by IAM roles without permissions boundaries, inline IAM policies, missing access logging, and missing deletion protection.")
+    if sev[csa.CAT_I]:
+        A(f"- {sev[csa.CAT_I]} open CAT I findings: {dominant(csa.CAT_I)}. They head the risk-ranked list in section 3 and are the first remediation targets.")
+    else:
+        A(f"- No open CAT I findings. {len([f for f in remediated if f['severity'] == csa.CAT_I])} CAT I findings from the baseline are marked Remediated in PR.")
+    A(f"- {sev[csa.CAT_II]} open CAT II findings, dominated by: {dominant(csa.CAT_II)}.")
+    A(f"- {sev[csa.CAT_III]} open CAT III findings, dominated by: {dominant(csa.CAT_III)}.")
     A("- The dominant systemic pattern is the absence of secure defaults. The same weakness recurs across service directories because each template was written independently; section 5 quantifies this and section 6 recommends automation that prevents it.")
-    A("- No Terraform sources exist in this revision, so the Terraform portion of the tasking is not applicable. The runner scans `.tf` files automatically when they are added.")
+    A(f"- {tf_scope}")
     A("")
 
     # ------------------------------------------------------------------ 2
@@ -161,7 +195,7 @@ def build(data: dict) -> str:
       f"{meta['skipped_files']} candidate files were skipped because they are not CloudFormation templates (for example Lambda source, policy fragments, configuration files).")
     A(f"- {len(twins)} JSON templates are generated twins of a YAML source in the same directory. YAML is the source of truth in this repository, so twins are not assessed separately (that would double every finding); "
       f"each twin is compared with its source and drift is reported as finding `CSA-CFG-002`. Use `--include-generated-json` to assess twins as independent templates.")
-    A(f"- Terraform: {meta['terraform_files']} `.tf` files found. Not applicable to this revision.")
+    A(f"- Terraform: {n_tf} `.tf` files found. " + ("Scanned with Checkov (Terraform framework); the custom rule pack is CloudFormation-only." if n_tf else "Not applicable to this revision."))
     A("- Static analysis only. No deployed-account evidence (AWS Config, Security Hub, CloudTrail) was available or used. Parameter values are evaluated from their template defaults.")
     A("")
     A("### 2.2 Tools and versions")
@@ -222,19 +256,21 @@ def build(data: dict) -> str:
     # ------------------------------------------------------------------ 5
     A("## 5. Systemic patterns")
     A("")
-    A("The counts below compare rule hits with the number of resources of the relevant type in the assessed templates. They show that the weaknesses are baseline defaults, not isolated mistakes.")
+    A("The counts below compare open rule hits with the number of resources of the relevant type in the assessed templates. They show that the weaknesses are baseline defaults, not isolated mistakes."
+      + (" Findings marked Remediated in PR are excluded from the affected count and shown in the last column." if remediated else ""))
     A("")
     prow = []
     for label, rid, types in PATTERNS:
-        n = sum(1 for f in findings if f["custom_rule_id"] == rid)
+        n = sum(1 for f in open_f if f["custom_rule_id"] == rid)
+        fixed = sum(1 for f in remediated if f["custom_rule_id"] == rid)
         d = sum(type_counts.get(t, 0) for t in types)
         if d:
-            prow.append([label, f"{n} of {d}", pct(n, d), rid])
-    A(table(["Pattern", "Affected resources", "Share", "Rule"], prow))
+            prow.append([label, f"{n} of {d}", pct(n, d), rid] + ([fixed] if remediated else []))
+    A(table(["Pattern", "Affected resources (open)", "Share", "Rule"] + (["Remediated in PR"] if remediated else []), prow))
     A("")
-    drift = [f for f in findings if f["custom_rule_id"] == "CSA-CFG-002"]
+    drift = [f for f in open_f if f["custom_rule_id"] == "CSA-CFG-002"]
     A(f"Other patterns: {len(drift)} generated JSON templates differ from their YAML source (`CSA-CFG-002`), so a reviewer reading the JSON may see a different security posture than the one deployed from YAML. "
-      f"{sum(1 for f in findings if f['custom_rule_id'] == 'CSA-NET-001' and f['severity'] == csa.CAT_II)} templates expose administrative ports through a CIDR parameter whose default is `0.0.0.0/0`; the parameter exists but its default undoes it.")
+      f"{sum(1 for f in open_f if f['custom_rule_id'] == 'CSA-NET-001' and f['severity'] == csa.CAT_II)} security groups expose administrative ports through a CIDR parameter whose default is `0.0.0.0/0`; the parameter exists but its default undoes it.")
     A("")
 
     # ------------------------------------------------------------------ 6
@@ -278,9 +314,15 @@ def build(data: dict) -> str:
     else:
         A("### 8.1 Planned for PR 2")
         A("")
-        A(f"PR 2 fixes the top CAT I findings by risk rank ({len(cat1_open)} are open) and the CAT II findings on the same resources where the fix is safe without knowing the Government environment: "
-          "replace `0.0.0.0/0` administrative ingress with a CIDR parameter that rejects `/0`, remove all-port ingress from public load balancer security groups while keeping the web ports open, "
-          "enable storage encryption, require IMDSv2, add S3 Public Access Blocks and TLS-only bucket policies, and enforce TLS 1.2+ listener policies.")
+        top10 = sorted(open_f, key=lambda f: f["risk_rank"])[:10]
+        A(f"PR 2 fixes the ten highest-ranked open findings ({sum(f['severity'] == csa.CAT_I for f in top10)} CAT I, "
+          f"{sum(f['severity'] == csa.CAT_II for f in top10)} CAT II; {len(cat1_open)} CAT I findings are open in total) and the CAT II findings on the same resources "
+          "where the fix is safe without knowing the Government environment. Fixes planned, by finding:")
+        A("")
+        planned = Counter(f["title"] for f in top10)
+        fix_for = {f["title"]: f["recommended_remediation"] for f in top10}
+        for title, n in planned.most_common():
+            A(f"- {title} ({n}): {fix_for[title]}")
         A("")
     A("### 8.2 Open for Government disposition")
     A("")
@@ -300,9 +342,11 @@ def build(data: dict) -> str:
     A("- **KMS key ownership.** Encryption fixes use AWS-managed keys or a KMS key parameter. The Government must decide whether a customer-managed key with a documented rotation and key policy is required for each data classification (`CSA-KMS-001`, `CSA-ENC-002`, `CSA-ENC-010`).")
     A("- **Central logging destinations.** VPC Flow Logs, load balancer access logs, S3 access logs and API Gateway execution logs need a Government-owned log bucket or log group and retention period. The templates do not name one.")
     A("- **Public load balancers and bastions.** Internet-facing web tiers and bastion hosts keep their intent. The Government must confirm that each is approved through the Cloud Access Point and boundary architecture, or replace bastions with Session Manager.")
-    A("- **Lambda network placement.** Functions flagged `CSA-MON-002` run outside a VPC although the stack contains VPC data resources. Placing them in a VPC changes connectivity and requires endpoint or NAT design decisions.")
+    if any(f["custom_rule_id"] == "CSA-MON-002" for f in open_f):
+        A("- **Lambda network placement.** Functions flagged `CSA-MON-002` run outside a VPC although the stack contains VPC data resources. Placing them in a VPC changes connectivity and requires endpoint or NAT design decisions.")
     A("- **Risk acceptance.** The Government must accept or reject the CAT III findings recommended for risk acceptance and any finding it considers not applicable to a given workload; `--dispositions` records those decisions in the next run.")
-    A("- **Terraform.** Confirm whether a Terraform module exists on another branch or repository. None exists in this revision.")
+    if not n_tf:
+        A("- **Terraform.** Confirm whether a Terraform module exists on another branch or repository. None exists in this revision.")
     A("")
 
     # ------------------------------------------------------------------ 10
