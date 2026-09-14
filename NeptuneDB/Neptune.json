@@ -156,13 +156,13 @@
             "Default": 120000
         },
         "StorageEncrypted": {
-            "Description": "Data-at-rest encryption",
+            "Description": "Data-at-rest encryption (enabled by default; encryption cannot be changed after the cluster is created)",
             "Type": "String",
             "AllowedValues": [
                 true,
                 false
             ],
-            "Default": false
+            "Default": true
         },
         "NeptuneDBSubnetGroupName": {
             "Description": "The name for the DB Subnet Group. This value is stored as a lowercase string. Constraints, Must contain no more than 255 letters, numbers, periods, underscores, spaces, or hyphens. Must not be default.",
@@ -336,6 +336,17 @@
                 },
                 "StorageEncrypted": {
                     "Ref": "StorageEncrypted"
+                },
+                "EnableCloudwatchLogsExports": {
+                    "Fn::If": [
+                        "EnableAuditLogUpload",
+                        [
+                            "audit"
+                        ],
+                        {
+                            "Ref": "AWS::NoValue"
+                        }
+                    ]
                 },
                 "VpcSecurityGroupIds": [
                     {
@@ -706,7 +717,8 @@
             "Properties": {
                 "DisplayName": {
                     "Fn::Sub": "${AWS::StackName} alarm topic"
-                }
+                },
+                "KmsMasterKeyId": "alias/aws/sns"
             },
             "Condition": "CreateSnsTopic"
         },

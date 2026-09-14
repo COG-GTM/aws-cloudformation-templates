@@ -19,13 +19,19 @@ Resources:
       guard:
         SuppressedRules:
           - S3_BUCKET_LOGGING_ENABLED
-          - S3_BUCKET_PUBLIC_READ_PROHIBITED
-          - S3_BUCKET_PUBLIC_WRITE_PROHIBITED
           - S3_BUCKET_REPLICATION_ENABLED
           - S3_BUCKET_VERSIONING_ENABLED
           - S3_BUCKET_DEFAULT_LOCK_ENABLED
-          - S3_BUCKET_SERVER_SIDE_ENCRYPTION_ENABLED
     Properties:
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        BlockPublicPolicy: true
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true
+      BucketEncryption:
+        ServerSideEncryptionConfiguration:
+          - ServerSideEncryptionByDefault:
+              SSEAlgorithm: AES256
       Tags:
         - Key: TestKey
           Value: my bucket %d
@@ -38,13 +44,19 @@ Resources:
       guard:
         SuppressedRules:
           - S3_BUCKET_LOGGING_ENABLED
-          - S3_BUCKET_PUBLIC_READ_PROHIBITED
-          - S3_BUCKET_PUBLIC_WRITE_PROHIBITED
           - S3_BUCKET_REPLICATION_ENABLED
           - S3_BUCKET_VERSIONING_ENABLED
           - S3_BUCKET_DEFAULT_LOCK_ENABLED
-          - S3_BUCKET_SERVER_SIDE_ENCRYPTION_ENABLED
     Properties:
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        BlockPublicPolicy: true
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true
+      BucketEncryption:
+        ServerSideEncryptionConfiguration:
+          - ServerSideEncryptionByDefault:
+              SSEAlgorithm: AES256
       Tags:
         - Key: TestKey
           Value: my %s bucket %d
@@ -59,13 +71,19 @@ Resources:
       guard:
         SuppressedRules:
           - S3_BUCKET_LOGGING_ENABLED
-          - S3_BUCKET_PUBLIC_READ_PROHIBITED
-          - S3_BUCKET_PUBLIC_WRITE_PROHIBITED
           - S3_BUCKET_REPLICATION_ENABLED
           - S3_BUCKET_VERSIONING_ENABLED
           - S3_BUCKET_DEFAULT_LOCK_ENABLED
-          - S3_BUCKET_SERVER_SIDE_ENCRYPTION_ENABLED
     Properties:
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        BlockPublicPolicy: true
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true
+      BucketEncryption:
+        ServerSideEncryptionConfiguration:
+          - ServerSideEncryptionByDefault:
+              SSEAlgorithm: AES256
       Tags:
         - Key: TestKey
           Value: my bucket %d
@@ -78,13 +96,19 @@ Resources:
       guard:
         SuppressedRules:
           - S3_BUCKET_LOGGING_ENABLED
-          - S3_BUCKET_PUBLIC_READ_PROHIBITED
-          - S3_BUCKET_PUBLIC_WRITE_PROHIBITED
           - S3_BUCKET_REPLICATION_ENABLED
           - S3_BUCKET_VERSIONING_ENABLED
           - S3_BUCKET_DEFAULT_LOCK_ENABLED
-          - S3_BUCKET_SERVER_SIDE_ENCRYPTION_ENABLED
     Properties:
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        BlockPublicPolicy: true
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true
+      BucketEncryption:
+        ServerSideEncryptionConfiguration:
+          - ServerSideEncryptionByDefault:
+              SSEAlgorithm: AES256
       Tags:
         - Key: TestKey
           Value: my %s bucket %d

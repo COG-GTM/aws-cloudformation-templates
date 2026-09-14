@@ -152,12 +152,12 @@ Parameters:
 
   # Data at rest encryption
   StorageEncrypted:
-    Description: Data-at-rest encryption
+    Description: Data-at-rest encryption (enabled by default; encryption cannot be changed after the cluster is created)
     Type: String
     AllowedValues:
       - true
       - false
-    Default: false
+    Default: true
 
   # Neptune DB Subnet Group Name
   NeptuneDBSubnetGroupName:
@@ -309,6 +309,10 @@ Resources:
 
       #      SnapshotIdentifier: # Enable for the DB cluster snapshot from which you want to restore
       StorageEncrypted: !Ref StorageEncrypted
+      EnableCloudwatchLogsExports: !If
+        - EnableAuditLogUpload
+        - - audit
+        - !Ref AWS::NoValue
 
       #      KmsKeyId:
       #          Fn::ImportValue: !Sub 'UPDATE_HERE"
@@ -469,6 +473,7 @@ Resources:
     Type: AWS::SNS::Topic
     Properties:
       DisplayName: !Sub ${AWS::StackName} alarm topic
+      KmsMasterKeyId: alias/aws/sns
     Condition: CreateSnsTopic
 
   # Optional SNS subscription for alarms

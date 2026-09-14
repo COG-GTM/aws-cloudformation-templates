@@ -40,6 +40,12 @@
             "Description": "Key pair for EC2 access",
             "Type": "AWS::EC2::KeyPair::KeyName"
         },
+        "BastionIngressCidr": {
+            "Description": "Administrative IP range (CIDR notation) permitted to reach the bastion on TCP/22. Supply the Government-approved administrative range; a /0 prefix is rejected.",
+            "Type": "String",
+            "AllowedPattern": "^(\\d{1,3}\\.){3}\\d{1,3}/([1-9]|[12]\\d|3[0-2])$",
+            "ConstraintDescription": "must be an IPv4 CIDR with a prefix length between /1 and /32 (0.0.0.0/0 is not permitted)"
+        },
         "LinuxAMI": {
             "Description": "Managed AMI ID for Amazon Linux",
             "Type": "AWS::SSM::Parameter::Value<AWS::EC2::Image::Id>",
@@ -390,6 +396,10 @@
                 "IamInstanceProfile": {
                     "Ref": "BastionProfile"
                 },
+                "MetadataOptions": {
+                    "HttpTokens": "required",
+                    "HttpEndpoint": "enabled"
+                },
                 "Tags": [
                     {
                         "Key": "Name",
@@ -414,7 +424,10 @@
                         "IpProtocol": "tcp",
                         "FromPort": 22,
                         "ToPort": 22,
-                        "CidrIp": "0.0.0.0/0"
+                        "CidrIp": {
+                            "Ref": "BastionIngressCidr"
+                        },
+                        "Description": "SSH from the Government administrative range only"
                     }
                 ],
                 "VpcId": {
