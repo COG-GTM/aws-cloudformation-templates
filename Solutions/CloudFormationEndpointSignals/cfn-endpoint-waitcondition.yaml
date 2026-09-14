@@ -45,8 +45,8 @@ Parameters:
   BastionIngressCidr:
     Description: Administrative IP range (CIDR notation) permitted to reach the bastion on TCP/22. Supply the Government-approved administrative range; a /0 prefix is rejected.
     Type: String
-    AllowedPattern: ^(\d{1,3}\.){3}\d{1,3}/([1-9]|[12]\d|3[0-2])$
-    ConstraintDescription: must be an IPv4 CIDR with a prefix length between /1 and /32 (0.0.0.0/0 is not permitted)
+    AllowedPattern: ^(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)(\.(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)){3}/([1-9]|[12]\d|3[0-2])$
+    ConstraintDescription: must be a valid IPv4 CIDR (each octet 0-255) with a prefix length between /1 and /32 (0.0.0.0/0 is not permitted)
 
   LinuxAMI:
     Description: Managed AMI ID for Amazon Linux
@@ -298,6 +298,9 @@ Resources:
       SubnetId: !Ref PrivateSubnet1
       ImageId: !Ref LinuxAMI
       IamInstanceProfile: !Ref PrivateProfile
+      MetadataOptions:
+        HttpTokens: required
+        HttpEndpoint: enabled
       UserData: !Base64
         Fn::Sub: |
           #!/bin/bash -x

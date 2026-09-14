@@ -468,12 +468,55 @@ Resources:
           Value: !Sub ${Storage}
 
           ### SNS Topic setup ###
+  # Customer-managed key for the alarm topic. CloudWatch alarms can only publish to an encrypted topic when the
+  # key policy grants cloudwatch.amazonaws.com kms:Decrypt/kms:GenerateDataKey*, which the AWS managed key
+  # (alias/aws/sns) does not allow.
+  NeptuneAlarmTopicKey:
+    Type: AWS::KMS::Key
+    Properties:
+      Description: !Sub ${AWS::StackName} Neptune alarm topic encryption key
+      EnableKeyRotation: true
+      KeyPolicy:
+        Version: "2012-10-17"
+        Statement:
+          - Sid: AllowKeyAdministrationByAccount
+            Effect: Allow
+            Principal:
+              AWS: !Sub arn:${AWS::Partition}:iam::${AWS::AccountId}:root
+            Action: kms:*
+            Resource: "*"
+          - Sid: AllowCloudWatchAlarmsToPublish
+            Effect: Allow
+            Principal:
+              Service: cloudwatch.amazonaws.com
+            Action:
+              - kms:Decrypt
+              - kms:GenerateDataKey*
+            Resource: "*"
+            Condition:
+              StringEquals:
+                aws:SourceAccount: !Ref AWS::AccountId
+              ArnLike:
+                aws:SourceArn: !Sub arn:${AWS::Partition}:cloudwatch:${AWS::Region}:${AWS::AccountId}:alarm:*
+          - Sid: AllowSnsToDeliverMessages
+            Effect: Allow
+            Principal:
+              Service: sns.amazonaws.com
+            Action:
+              - kms:Decrypt
+              - kms:GenerateDataKey*
+            Resource: "*"
+            Condition:
+              StringEquals:
+                aws:SourceAccount: !Ref AWS::AccountId
+    Condition: CreateSnsTopic
+
   # Optional SNS topic for alarms
   NeptuneAlarmTopic:
     Type: AWS::SNS::Topic
     Properties:
       DisplayName: !Sub ${AWS::StackName} alarm topic
-      KmsMasterKeyId: alias/aws/sns
+      KmsMasterKeyId: !Ref NeptuneAlarmTopicKey
     Condition: CreateSnsTopic
 
   # Optional SNS subscription for alarms

@@ -712,13 +712,84 @@
                 ]
             }
         },
+        "NeptuneAlarmTopicKey": {
+            "Type": "AWS::KMS::Key",
+            "Properties": {
+                "Description": {
+                    "Fn::Sub": "${AWS::StackName} Neptune alarm topic encryption key"
+                },
+                "EnableKeyRotation": true,
+                "KeyPolicy": {
+                    "Version": "2012-10-17",
+                    "Statement": [
+                        {
+                            "Sid": "AllowKeyAdministrationByAccount",
+                            "Effect": "Allow",
+                            "Principal": {
+                                "AWS": {
+                                    "Fn::Sub": "arn:${AWS::Partition}:iam::${AWS::AccountId}:root"
+                                }
+                            },
+                            "Action": "kms:*",
+                            "Resource": "*"
+                        },
+                        {
+                            "Sid": "AllowCloudWatchAlarmsToPublish",
+                            "Effect": "Allow",
+                            "Principal": {
+                                "Service": "cloudwatch.amazonaws.com"
+                            },
+                            "Action": [
+                                "kms:Decrypt",
+                                "kms:GenerateDataKey*"
+                            ],
+                            "Resource": "*",
+                            "Condition": {
+                                "StringEquals": {
+                                    "aws:SourceAccount": {
+                                        "Ref": "AWS::AccountId"
+                                    }
+                                },
+                                "ArnLike": {
+                                    "aws:SourceArn": {
+                                        "Fn::Sub": "arn:${AWS::Partition}:cloudwatch:${AWS::Region}:${AWS::AccountId}:alarm:*"
+                                    }
+                                }
+                            }
+                        },
+                        {
+                            "Sid": "AllowSnsToDeliverMessages",
+                            "Effect": "Allow",
+                            "Principal": {
+                                "Service": "sns.amazonaws.com"
+                            },
+                            "Action": [
+                                "kms:Decrypt",
+                                "kms:GenerateDataKey*"
+                            ],
+                            "Resource": "*",
+                            "Condition": {
+                                "StringEquals": {
+                                    "aws:SourceAccount": {
+                                        "Ref": "AWS::AccountId"
+                                    }
+                                }
+                            }
+                        }
+                    ]
+                }
+            },
+            "Condition": "CreateSnsTopic"
+        },
         "NeptuneAlarmTopic": {
             "Type": "AWS::SNS::Topic",
             "Properties": {
                 "DisplayName": {
                     "Fn::Sub": "${AWS::StackName} alarm topic"
                 },
-                "KmsMasterKeyId": "alias/aws/sns"
+                "KmsMasterKeyId": {
+                    "Ref": "NeptuneAlarmTopicKey"
+                }
             },
             "Condition": "CreateSnsTopic"
         },
