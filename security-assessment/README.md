@@ -49,6 +49,15 @@ for ws in wb:
 EOF
 ```
 
+## Tests
+
+`scripts/tests/test_cloud_security_assessment.py` covers the parts of the runner that do not shell out: YAML/JSON parsing and evidence-line bounds, the custom rule pack (including empty or `Fn::If`-conditional configuration blocks), scanner result normalization and merging, stable finding IDs, baseline carry-forward with schema changes, and the report's systemic pattern shares. It also checks that the committed `findings.json` satisfies the traceability constraints.
+
+```bash
+python3 -m pip install pytest
+python3 -m pytest scripts/tests -q
+```
+
 ## Rendering the report to PDF
 
 ```bash

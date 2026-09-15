@@ -37,30 +37,30 @@ REFERENCES = [
     ("Rain (CloudFormation packaging and module tool used by this repository)", "https://github.com/aws-cloudformation/rain"),
 ]
 
-# Systemic-pattern probes: (label, custom rule id, resource types that the rule applies to)
+# Systemic-pattern probes: (label, custom rule id). The share is affected resources (unique template + logical ID
+# pairs with an open finding from the rule) over the resources of the types the rule applies to, both taken from
+# findings.json so the denominator follows the rule's own ``applies_to`` metadata.
 PATTERNS = [
-    ("S3 buckets without declared server-side encryption", "CSA-ENC-001", ["AWS::S3::Bucket"]),
-    ("S3 buckets without an aws:SecureTransport deny policy", "CSA-TLS-001", ["AWS::S3::Bucket"]),
-    ("S3 buckets without a Public Access Block", "CSA-NET-007", ["AWS::S3::Bucket"]),
-    ("S3 buckets without server access logging", "CSA-LOG-001", ["AWS::S3::Bucket"]),
-    ("EC2 instances, launch templates and launch configurations without IMDSv2 required", "CSA-CFG-001",
-     ["AWS::EC2::Instance", "AWS::EC2::LaunchTemplate", "AWS::AutoScaling::LaunchConfiguration"]),
-    ("EBS volumes and block device mappings without encryption", "CSA-ENC-004",
-     ["AWS::EC2::Volume", "AWS::EC2::Instance", "AWS::EC2::LaunchTemplate", "AWS::AutoScaling::LaunchConfiguration"]),
-    ("Database clusters and instances without storage encryption", "CSA-ENC-003",
-     ["AWS::RDS::DBInstance", "AWS::RDS::DBCluster", "AWS::Neptune::DBCluster", "AWS::DocDB::DBCluster", "AWS::Redshift::Cluster"]),
-    ("VPCs without a flow log", "CSA-LOG-002", ["AWS::EC2::VPC"]),
-    ("Load balancers without access logging", "CSA-LOG-003",
-     ["AWS::ElasticLoadBalancingV2::LoadBalancer", "AWS::ElasticLoadBalancing::LoadBalancer"]),
-    ("Security groups with administrative ports open to the Internet (all severities)", "CSA-NET-001", ["AWS::EC2::SecurityGroup"]),
-    ("IAM roles without a permissions boundary", "CSA-IAM-007", ["AWS::IAM::Role"]),
-    ("IAM roles with inline policies", "CSA-IAM-006", ["AWS::IAM::Role"]),
-    ("IAM policies granting write actions on Resource *", "CSA-IAM-003",
-     ["AWS::IAM::Role", "AWS::IAM::Policy", "AWS::IAM::ManagedPolicy", "AWS::IAM::User", "AWS::IAM::Group"]),
-    ("Stateful resources without deletion protection or a Retain policy", "CSA-BKP-002",
-     ["AWS::RDS::DBInstance", "AWS::RDS::DBCluster", "AWS::DynamoDB::Table", "AWS::S3::Bucket", "AWS::EFS::FileSystem"]),
-    ("Lambda functions without active tracing", "CSA-MON-001", ["AWS::Lambda::Function", "AWS::Serverless::Function"]),
+    ("S3 buckets without declared server-side encryption", "CSA-ENC-001"),
+    ("S3 buckets without an aws:SecureTransport deny policy", "CSA-TLS-001"),
+    ("S3 buckets without a Public Access Block", "CSA-NET-007"),
+    ("S3 buckets without server access logging", "CSA-LOG-001"),
+    ("EC2 instances, launch templates and launch configurations without IMDSv2 required", "CSA-CFG-001"),
+    ("EC2 volumes, instances, launch templates and launch configurations with unencrypted block storage", "CSA-ENC-004"),
+    ("Database clusters and instances without storage encryption", "CSA-ENC-003"),
+    ("VPCs without a flow log", "CSA-LOG-002"),
+    ("Load balancers without access logging", "CSA-LOG-003"),
+    ("Security groups with administrative ports open to the Internet (all severities)", "CSA-NET-001"),
+    ("IAM roles without a permissions boundary", "CSA-IAM-007"),
+    ("IAM roles with inline policies", "CSA-IAM-006"),
+    ("IAM principals and policies granting write actions on Resource *", "CSA-IAM-003"),
+    ("Stateful resources without deletion protection or a Retain policy", "CSA-BKP-002"),
+    ("Lambda functions without active tracing", "CSA-MON-001"),
 ]
+
+
+def affected_resources(findings: list[dict], rid: str) -> int:
+    return len({(f["template_path"], f["resource_logical_id"]) for f in findings if f["custom_rule_id"] == rid})
 
 
 def md_escape(s: str) -> str:
@@ -272,10 +272,13 @@ def build(data: dict) -> str:
       + (" Findings marked Remediated in PR are excluded from the affected count and shown in the last column." if remediated else ""))
     A("")
     prow = []
-    for label, rid, types in PATTERNS:
-        n = sum(1 for f in open_f if f["custom_rule_id"] == rid)
-        fixed = sum(1 for f in remediated if f["custom_rule_id"] == rid)
-        d = sum(type_counts.get(t, 0) for t in types)
+    for label, rid in PATTERNS:
+        n = affected_resources(open_f, rid)
+        fixed = affected_resources(remediated, rid)
+        d = sum(type_counts.get(t, 0) for t in rules[rid]["applies_to"])
+        if n > d:
+            raise SystemExit(f"{rid}: {n} affected resources exceed the {d} resources of its applies_to types; "
+                             "the rule's applies_to metadata is incomplete")
         if d:
             prow.append([label, f"{n} of {d}", pct(n, d), rid] + ([fixed] if remediated else []))
     A(table(["Pattern", "Affected resources (open)", "Share", "Rule"] + (["Remediated in PR"] if remediated else []), prow))

@@ -36,7 +36,7 @@ import subprocess
 import sys
 import time
 from collections import Counter
-from dataclasses import dataclass, field, fields
+from dataclasses import MISSING, dataclass, field, fields
 from pathlib import Path
 from typing import Any, Callable, Iterable
 
@@ -349,6 +349,7 @@ class TemplateCtx:
     lines: list[str]
     data: dict
     service_dir: str
+    _resource_lines: list[int] | None = field(default=None, repr=False, compare=False)
 
     @property
     def resources(self) -> dict[str, dict]:
@@ -365,9 +366,11 @@ class TemplateCtx:
     def has_type(self, *types: str) -> bool:
         return bool(self.by_type(*types))
 
-    def find_line(self, pattern: str, start: int = 0) -> int | None:
+    def find_line(self, pattern: str, start: int = 0, end: int | None = None) -> int | None:
+        """1-based line of the first match at or after 0-based ``start`` and before 0-based ``end``."""
         rx = re.compile(pattern)
-        for i in range(max(start, 0), len(self.lines)):
+        stop = len(self.lines) if end is None else min(end, len(self.lines))
+        for i in range(max(start, 0), stop):
             if rx.search(self.lines[i]):
                 return i + 1
         return None
@@ -377,10 +380,25 @@ class TemplateCtx:
             return res.__line__
         return self.find_line(rf'^\s*"?{re.escape(logical_id)}"?\s*:') or 1
 
+    def resource_end_line(self, logical_id: str, res: dict) -> int:
+        """Line after which text no longer belongs to ``logical_id``: the line of the next resource in file order,
+        or the end of the file for the last resource (JSON templates carry no source positions, so the bound is
+        derived from the other resources' lines)."""
+        if self._resource_lines is None:
+            self._resource_lines = sorted(self.resource_line(lid, r) for lid, r in self.resources.items())
+        start = self.resource_line(logical_id, res)
+        later = [ln for ln in self._resource_lines if ln > start]
+        return later[0] if later else len(self.lines) + 1
+
     def prop_line(self, logical_id: str, res: dict, *keys: str) -> int:
-        """Line of the deepest existing key along Properties.<keys>, else the resource line."""
+        """Line of the deepest existing key along Properties.<keys>, else the resource line.
+
+        YAML nodes carry their own positions. JSON nodes do not, so the deepest existing key is located by a
+        textual search that is bounded to the resource's own range; a key that exists only in a later resource
+        never becomes evidence for this one."""
         node: Any = res
         line = self.resource_line(logical_id, res)
+        deepest: str | None = None
         for key in keys:
             if isinstance(node, LMap):
                 kl = node.line_of(key)
@@ -388,10 +406,12 @@ class TemplateCtx:
                     line = kl
             if isinstance(node, dict) and key in node:
                 node = node[key]
+                deepest = str(key)
             else:
                 break
-        if not isinstance(res, LMap) and keys:  # JSON: search textually after the resource line
-            found = self.find_line(rf'"{re.escape(str(keys[-1]))}"\s*:', start=line - 1)
+        if not isinstance(res, LMap) and deepest is not None:
+            end = self.resource_end_line(logical_id, res)
+            found = self.find_line(rf'"{re.escape(deepest)}"\s*:', start=line - 1, end=end - 1)
             if found:
                 line = found
         return line
@@ -434,6 +454,41 @@ def props(res: dict) -> dict:
 def rtype_of(res: dict) -> str:
     t = res.get("Type", "")
     return t if isinstance(t, str) else json.dumps(t, default=str)
+
+
+def if_branches(value: Any, depth: int = 0) -> list[Any]:
+    """``value`` itself, or every leaf of nested ``Fn::If`` expressions."""
+    if isinstance(value, dict) and set(value) == {"Fn::If"} and isinstance(value["Fn::If"], list) and len(value["Fn::If"]) == 3 and depth < 6:
+        out: list[Any] = []
+        for branch in value["Fn::If"][1:]:
+            out.extend(if_branches(branch, depth + 1))
+        return out
+    return [value]
+
+
+def block_gap(p: dict, key: str, *required: str) -> str | None:
+    """Why the configuration block ``Properties.<key>`` does not configure anything: it is absent, it is not a
+    mapping, one of ``required`` sub-keys is missing or empty, or an ``Fn::If`` branch drops it (``AWS::NoValue``),
+    in which case the control depends on a deployment-time condition. None when every branch is usable. Rules use
+    this instead of a presence test so that an empty or malformed block does not count as a control."""
+    if key not in p:
+        return f"Properties.{key} is absent"
+    branches = if_branches(p.get(key))
+    conditional = len(branches) > 1
+    for block in branches:
+        if not isinstance(block, dict):
+            if conditional:
+                return f"Properties.{key} is removed in one Fn::If branch (depends on a deployment-time condition)"
+            return f"Properties.{key} is not a mapping"
+        empty = [r for r in required if not block.get(r)]
+        if empty:
+            return f"Properties.{key} does not set {', '.join(empty)}" + (" in one Fn::If branch" if conditional else "")
+    return None
+
+
+def gap_line(ctx: TemplateCtx, lid: str, res: dict, key: str) -> int:
+    """Evidence line for a ``block_gap`` result: the block when it exists, else the resource."""
+    return ctx.prop_line(lid, res, "Properties", key) if key in props(res) else ctx.resource_line(lid, res)
 
 
 def is_true(v: Any) -> bool:
@@ -545,15 +600,42 @@ def rule(**kwargs):
 S3_BUCKET = "AWS::S3::Bucket"
 
 
+def s3_sse_defaults(res: dict) -> list[dict]:
+    """The ``ServerSideEncryptionByDefault`` mappings that carry an ``SSEAlgorithm`` in a bucket's
+    ``BucketEncryption`` block. Empty when the block is absent or declares no usable rule (an empty block, a
+    rule list without ``ServerSideEncryptionByDefault``, or a default without an algorithm) so that a malformed
+    block is treated the same as a missing one."""
+    out: list[dict] = []
+    for enc in if_branches(props(res).get("BucketEncryption")):
+        if not isinstance(enc, dict):
+            return []  # one Fn::If branch removes the block
+        found = False
+        for rule_ in as_list(enc.get("ServerSideEncryptionConfiguration")):
+            if not isinstance(rule_, dict):
+                continue
+            d = rule_.get("ServerSideEncryptionByDefault")
+            if isinstance(d, dict) and d.get("SSEAlgorithm"):
+                out.append(d)
+                found = True
+        if not found:
+            return []
+    return out
+
+
 @rule(id="CSA-ENC-001", title="S3 bucket does not declare server-side encryption",
       severity=CAT_II, nist=["SC-28", "SC-28(1)"], area="encryption_rest",
       applies_to=[S3_BUCKET], overlaps={"CKV_AWS_19", "W41"}, tags={"datastore"},
-      description="The bucket has no BucketEncryption block. Encryption then depends on the account default (SSE-S3) and the baseline cannot show that data at rest is protected with an approved key.",
+      description="The bucket has no BucketEncryption block, or the block declares no ServerSideEncryptionByDefault rule with an SSEAlgorithm. Encryption then depends on the account default (SSE-S3) and the baseline cannot show that data at rest is protected with an approved key.",
       remediation="Add BucketEncryption with ServerSideEncryptionByDefault using aws:kms and a customer-managed key; set BucketKeyEnabled: true.")
 def r_s3_encryption(ctx: TemplateCtx):
     for lid, res in ctx.by_type(S3_BUCKET):
+        if s3_sse_defaults(res):
+            continue
         if "BucketEncryption" not in props(res):
             yield Hit(lid, S3_BUCKET, ctx.resource_line(lid, res), "Properties.BucketEncryption is absent")
+        else:
+            yield Hit(lid, S3_BUCKET, ctx.prop_line(lid, res, "Properties", "BucketEncryption"),
+                      "Properties.BucketEncryption declares no ServerSideEncryptionByDefault rule with an SSEAlgorithm")
 
 
 @rule(id="CSA-ENC-002", title="S3 bucket encryption does not use a customer-managed KMS key",
@@ -563,14 +645,8 @@ def r_s3_encryption(ctx: TemplateCtx):
       remediation="Set SSEAlgorithm: aws:kms and KMSMasterKeyID to a customer-managed key with a restrictive key policy.")
 def r_s3_cmk(ctx: TemplateCtx):
     for lid, res in ctx.by_type(S3_BUCKET):
-        enc = props(res).get("BucketEncryption")
-        if not isinstance(enc, dict):
-            continue
-        for rule_ in as_list(enc.get("ServerSideEncryptionConfiguration")):
-            if not isinstance(rule_, dict):
-                continue
-            d = rule_.get("ServerSideEncryptionByDefault")
-            if isinstance(d, dict) and (d.get("SSEAlgorithm") == "AES256" or not d.get("KMSMasterKeyID")):
+        for d in s3_sse_defaults(res):
+            if d.get("SSEAlgorithm") == "AES256" or not d.get("KMSMasterKeyID"):
                 yield Hit(lid, S3_BUCKET, ctx.prop_line(lid, res, "Properties", "BucketEncryption"),
                           f"SSEAlgorithm={d.get('SSEAlgorithm')} without KMSMasterKeyID")
                 break
@@ -693,16 +769,20 @@ def r_loggroup_kms(ctx: TemplateCtx):
       severity=CAT_II, nist=["SC-28", "SC-28(1)"], area="encryption_rest",
       applies_to=["AWS::Kinesis::Stream", "AWS::KinesisFirehose::DeliveryStream"], overlaps={"CKV_AWS_43", "CKV_AWS_241", "CKV_AWS_240"},
       tags={"datastore"},
-      description="The Kinesis stream has no StreamEncryption, or the Firehose delivery stream (DirectPut) has no DeliveryStreamEncryptionConfigurationInput. Buffered records are stored unencrypted.",
+      description="The Kinesis stream has no StreamEncryption with EncryptionType and KeyId, or the Firehose delivery stream (DirectPut) has no DeliveryStreamEncryptionConfigurationInput with KeyType. Buffered records are stored unencrypted.",
       remediation="Add StreamEncryption (EncryptionType: KMS, KeyId) or DeliveryStreamEncryptionConfigurationInput (KeyType: CUSTOMER_MANAGED_CMK).")
 def r_stream_encryption(ctx: TemplateCtx):
     for lid, res in ctx.by_type("AWS::Kinesis::Stream"):
-        if "StreamEncryption" not in props(res):
-            yield Hit(lid, "AWS::Kinesis::Stream", ctx.resource_line(lid, res), "Properties.StreamEncryption is absent")
+        gap = block_gap(props(res), "StreamEncryption", "EncryptionType", "KeyId")
+        if gap:
+            yield Hit(lid, "AWS::Kinesis::Stream", gap_line(ctx, lid, res, "StreamEncryption"), gap)
     for lid, res in ctx.by_type("AWS::KinesisFirehose::DeliveryStream"):
         p = props(res)
-        if p.get("DeliveryStreamType", "DirectPut") == "DirectPut" and "DeliveryStreamEncryptionConfigurationInput" not in p:
-            yield Hit(lid, "AWS::KinesisFirehose::DeliveryStream", ctx.resource_line(lid, res), "DeliveryStreamEncryptionConfigurationInput is absent")
+        if p.get("DeliveryStreamType", "DirectPut") != "DirectPut":
+            continue
+        gap = block_gap(p, "DeliveryStreamEncryptionConfigurationInput", "KeyType")
+        if gap:
+            yield Hit(lid, "AWS::KinesisFirehose::DeliveryStream", gap_line(ctx, lid, res, "DeliveryStreamEncryptionConfigurationInput"), gap)
 
 
 @rule(id="CSA-ENC-010", title="DynamoDB table does not use a customer-managed KMS key",
@@ -1241,12 +1321,13 @@ def r_api_noauth(ctx: TemplateCtx):
 @rule(id="CSA-LOG-001", title="S3 bucket has no server access logging",
       severity=CAT_III, nist=["AU-2", "AU-12"], area="logging",
       applies_to=[S3_BUCKET], overlaps={"CKV_AWS_18", "W35"},
-      description="LoggingConfiguration is absent. Object-level access to the bucket cannot be reconstructed for audit or incident response.",
+      description="LoggingConfiguration is absent or names no DestinationBucketName (an empty block disables logging). Object-level access to the bucket cannot be reconstructed for audit or incident response.",
       remediation="Add LoggingConfiguration pointing at a dedicated, encrypted log bucket, or enable CloudTrail data events for the bucket.")
 def r_s3_logging(ctx: TemplateCtx):
     for lid, res in ctx.by_type(S3_BUCKET):
-        if "LoggingConfiguration" not in props(res):
-            yield Hit(lid, S3_BUCKET, ctx.resource_line(lid, res), "Properties.LoggingConfiguration is absent")
+        gap = block_gap(props(res), "LoggingConfiguration", "DestinationBucketName")
+        if gap:
+            yield Hit(lid, S3_BUCKET, gap_line(ctx, lid, res, "LoggingConfiguration"), gap)
 
 
 @rule(id="CSA-LOG-002", title="VPC has no flow log",
@@ -1386,8 +1467,9 @@ def r_lambda_vpc(ctx: TemplateCtx):
                         "AWS::ElastiCache::ReplicationGroup", "AWS::ElastiCache::CacheCluster"):
         return
     for lid, res in ctx.by_type("AWS::Lambda::Function", "AWS::Serverless::Function"):
-        if "VpcConfig" not in props(res):
-            yield Hit(lid, rtype_of(res), ctx.resource_line(lid, res), "VpcConfig is absent")
+        gap = block_gap(props(res), "VpcConfig", "SubnetIds")
+        if gap:
+            yield Hit(lid, rtype_of(res), gap_line(ctx, lid, res, "VpcConfig"), gap)
 
 
 # ---- IAM least privilege --------------------------------------------------------------------
@@ -1756,6 +1838,11 @@ RULES_BY_ID = {r.id: r for r in RULES}
 # --------------------------------------------------------------------------------------
 
 
+# Bumped when a Finding field is added, removed or renamed. A baseline written by another schema version is
+# still read: missing fields with defaults are filled in and rows lacking a required field are reported and skipped.
+FINDINGS_SCHEMA_VERSION = 1
+
+
 @dataclass
 class Finding:
     finding_id: str
@@ -1810,12 +1897,24 @@ class Finding:
 
 def make_finding_id(rule_id: str, rel: str, resource: str, discriminator: str = "") -> str:
     """Stable ID from rule, template and resource. ``discriminator`` is the hit key of rules that can report one
-    resource several times; it is always applied for such rules, so an ID does not depend on which sibling hits
-    exist in a given run."""
+    resource several times (always applied for such rules, so an ID does not depend on which sibling hits exist
+    in a given run) or the scanner violation discriminator from ``violation_discriminators``."""
     h = hashlib.sha1(f"{rule_id}|{rel}|{resource}".encode()).hexdigest()[:6].upper()
     if discriminator:
         h += "-" + hashlib.sha1(discriminator.encode()).hexdigest()[:4].upper()
     return f"{rule_id}-{h}"
+
+
+def finding_from_dict(d: dict) -> Finding | None:
+    """Rebuild a Finding from a serialized row. Unknown keys are ignored, fields with defaults are filled in when
+    absent, and None is returned when a required field is missing (the caller reports the row)."""
+    kwargs: dict[str, Any] = {}
+    for fl in fields(Finding):
+        if fl.name in d:
+            kwargs[fl.name] = d[fl.name]
+        elif fl.default is MISSING and fl.default_factory is MISSING:  # type: ignore[misc]
+            return None
+    return Finding(**kwargs)
 
 
 def service_dir_of(rel: str) -> str:
@@ -2017,6 +2116,37 @@ class ExternalHit:
     line: int
     guideline: str = ""
     message: str = ""
+    # Identity of this violation within (source, check_id, template, resource) when the scanner can report the
+    # same check several times on one resource. cfn-lint supplies the property path (stable across line shifts);
+    # Checkov and cfn_nag report one result per resource and check, so theirs is derived from line and message
+    # only when two results collide (see ``violation_discriminators``).
+    discriminator: str = ""
+
+    @property
+    def identity(self) -> tuple[str, str, str, str]:
+        return self.source, self.check_id, self.rel, self.logical_id
+
+
+def violation_discriminators(hits: list[ExternalHit]) -> dict[int, str]:
+    """Discriminator to use in the finding ID of each hit (by ``id(hit)``).
+
+    A hit with its own discriminator (cfn-lint property path) always uses it, so the ID does not depend on which
+    sibling violations exist in a run. Hits without one share an identity per (source, check, template, resource);
+    when several such hits differ in line or message, each receives ``line:message`` so that none of them is lost,
+    and exact duplicates keep colliding (they are suppressed by the caller)."""
+    groups: dict[tuple[str, str, str, str], set[tuple[int, str]]] = {}
+    for h in hits:
+        if not h.discriminator:
+            groups.setdefault(h.identity, set()).add((h.line, h.message))
+    out: dict[int, str] = {}
+    for h in hits:
+        if h.discriminator:
+            out[id(h)] = h.discriminator
+        elif len(groups.get(h.identity, ())) > 1:
+            out[id(h)] = f"{h.line}:{h.message}"
+        else:
+            out[id(h)] = ""
+    return out
 
 
 def parse_json_prefix(out: str, opener: str = "[{") -> object | None:
@@ -2180,6 +2310,29 @@ def run_cfn_nag(repo: Path, templates: list[Path], tr: ToolResult) -> list[Exter
 LINT_RESULT_CODES = {0, 2, 4, 6, 8, 10, 12, 14}
 
 
+def cfn_lint_hits_from_output(data: list, filename: str | None = None) -> tuple[list[ExternalHit], int]:
+    """(error hits, number of non-error messages) from a cfn-lint ``--format json`` result list. The property path
+    below the resource is the hit's discriminator so that two errors of one rule on one resource stay distinct."""
+    hits: list[ExternalHit] = []
+    warnings = 0
+    for m in data:
+        if not isinstance(m, dict):
+            continue
+        if m.get("Level", "") != "Error":
+            warnings += 1
+            continue
+        rule_ = m.get("Rule") or {}
+        loc = m.get("Location") or {}
+        path = loc.get("Path") or []
+        lid = str(path[1]) if len(path) > 1 and path[0] == "Resources" else (str(path[0]) if path else "")
+        within = path[2:] if len(path) > 1 and path[0] == "Resources" else path[1:]
+        rel = filename or Path(str(m.get("Filename", ""))).as_posix().lstrip("./")
+        hits.append(ExternalHit("cfn-lint", str(rule_.get("Id", "")), str(rule_.get("ShortDescription", "")), rel, lid, "",
+                                int(((loc.get("Start") or {}).get("LineNumber")) or 1), message=str(m.get("Message", "")),
+                                discriminator="/".join(str(p) for p in within) or str(m.get("Message", ""))))
+    return hits, warnings
+
+
 def run_cfn_lint(repo: Path, templates: list[Path], tr: ToolResult) -> tuple[list[ExternalHit], int]:
     """Run cfn-lint the way the repository's own lint gate does (scripts/lint-single.sh): macro examples are
     not linted, templates that use ``!Rain::`` directives are packaged with ``rain pkg`` first when ``rain`` is
@@ -2212,19 +2365,9 @@ def run_cfn_lint(repo: Path, templates: list[Path], tr: ToolResult) -> tuple[lis
 
     def collect(data: list, filename: str | None = None) -> None:
         nonlocal warnings
-        for m in data:
-            if not isinstance(m, dict):
-                continue
-            if m.get("Level", "") != "Error":
-                warnings += 1
-                continue
-            rule_ = m.get("Rule") or {}
-            loc = m.get("Location") or {}
-            path = loc.get("Path") or []
-            lid = str(path[1]) if len(path) > 1 and path[0] == "Resources" else (str(path[0]) if path else "")
-            rel = filename or Path(str(m.get("Filename", ""))).as_posix().lstrip("./")
-            hits.append(ExternalHit("cfn-lint", str(rule_.get("Id", "")), str(rule_.get("ShortDescription", "")), rel, lid, "",
-                                    int(((loc.get("Start") or {}).get("LineNumber")) or 1), message=str(m.get("Message", ""))))
+        new_hits, new_warnings = cfn_lint_hits_from_output(data, filename)
+        hits.extend(new_hits)
+        warnings += new_warnings
 
     batch = 40
     for i in range(0, len(plain), batch):
@@ -2282,7 +2425,7 @@ def run_cfn_lint(repo: Path, templates: list[Path], tr: ToolResult) -> tuple[lis
     return hits, warnings
 
 
-def normalize_external(hit: ExternalHit, repo: Path, resource_types: dict[tuple[str, str], str]) -> Finding:
+def normalize_external(hit: ExternalHit, repo: Path, resource_types: dict[tuple[str, str], str], discriminator: str = "") -> Finding:
     rtype = hit.resource_type or resource_types.get((hit.rel, hit.logical_id), "")
     if hit.source == "cfn-lint":
         nist, area, sev, cis, overlap = ["CM-2", "CM-6"], "validity", CAT_III, None, None
@@ -2308,7 +2451,7 @@ def normalize_external(hit: ExternalHit, repo: Path, resource_types: dict[tuple[
             pass
     tool_key = f"{hit.source}:{hit.check_id}"
     f = Finding(
-        finding_id=make_finding_id(hit.check_id.replace("_", "-"), hit.rel, hit.logical_id),
+        finding_id=make_finding_id(hit.check_id.replace("_", "-"), hit.rel, hit.logical_id, discriminator),
         template_path=hit.rel, service_directory=service_dir_of(hit.rel), resource_logical_id=hit.logical_id, resource_type=rtype,
         title=title, description=desc, evidence=f"{hit.rel}:{hit.line} — {hit.name or hit.message}", evidence_file=hit.rel, evidence_line=hit.line,
         evidence_snippet=snippet, severity=sev, severity_justification=SEVERITY_JUSTIFICATION[sev], nist_controls=nist, cis_aws_v3_id=cis,
@@ -2365,14 +2508,16 @@ def merge_external(custom: list[Finding], external: list[ExternalHit], repo: Pat
         return same_line[0] if len(same_line) == 1 else None
     extra: list[Finding] = []
     tool_only: dict[tuple[str, str, str], Finding] = {}
-    seen: set[tuple[str, str, str]] = set()
+    seen: set[tuple[str, str, str, str, str]] = set()
+    discriminators = violation_discriminators(external)
     # Checkov first so that cfn_nag hits can attach to an equivalent Checkov finding.
     for hit in sorted(external, key=lambda h: h.source != "checkov"):
         if hit.rel not in assessed:
             continue
-        dedupe = (hit.source, hit.check_id, f"{hit.rel}|{hit.logical_id}")
+        disc = discriminators[id(hit)]
+        dedupe = (*hit.identity, disc)
         if dedupe in seen:
-            continue
+            continue  # exact duplicate of a violation already taken
         seen.add(dedupe)
         merged = False
         for r in RULES:
@@ -2393,8 +2538,8 @@ def merge_external(custom: list[Finding], external: list[ExternalHit], repo: Pat
                 f.cfn_nag_ids.append(hit.check_id)
                 f.source = "checkov+cfn_nag"
                 continue
-        f = normalize_external(hit, repo, resource_types)
-        tool_only[(hit.rel, hit.logical_id, hit.check_id)] = f
+        f = normalize_external(hit, repo, resource_types, disc)
+        tool_only.setdefault((hit.rel, hit.logical_id, hit.check_id), f)
         extra.append(f)
     return custom + extra
 
@@ -2467,13 +2612,22 @@ def apply_baseline(findings: list[Finding], baseline_path: Path | None, disposit
     if baseline_path and baseline_path.exists():
         base = json.loads(baseline_path.read_text())
         before = base.get("summary")
-        base_sha = str(base.get("metadata", {}).get("commit_sha", "?"))[:12]
+        base_meta = base.get("metadata", {})
+        base_sha = str(base_meta.get("commit_sha", "?"))[:12]
+        base_schema = base_meta.get("schema_version")
+        if base_schema != FINDINGS_SCHEMA_VERSION:
+            print(f"WARNING: baseline {baseline_path} was written with findings schema {base_schema!r}; this runner writes "
+                  f"schema {FINDINGS_SCHEMA_VERSION}. Rows missing a required field are skipped.", file=sys.stderr)
+        skipped_rows: list[str] = []
         for d in base.get("findings", []):
-            if d["finding_id"] in current_ids:
+            if not isinstance(d, dict) or d.get("finding_id") in current_ids:
                 continue
             if d.get("disposition") in {"Not applicable"}:
                 continue
-            carried = Finding(**{k: v for k, v in d.items() if k in {fl.name for fl in fields(Finding)}})
+            carried = finding_from_dict(d)
+            if carried is None:
+                skipped_rows.append(str(d.get("finding_id", "?")))
+                continue
             gap = coverage_gap(carried, tools or [], parsed if parsed is not None else {carried.template_path}, rule_failures)
             if gap:
                 carried.disposition_note = f"Not re-evaluated: {gap}; disposition carried forward from baseline commit {base_sha}."
@@ -2481,6 +2635,9 @@ def apply_baseline(findings: list[Finding], baseline_path: Path | None, disposit
                 carried.disposition = "Remediated in PR"
                 carried.disposition_note = f"Finding no longer detected after remediation (baseline commit {base_sha})."
             findings.append(carried)
+        if skipped_rows:
+            print(f"WARNING: {len(skipped_rows)} baseline row(s) lack a required Finding field and were not carried forward: "
+                  + ", ".join(skipped_rows[:20]) + (" ..." if len(skipped_rows) > 20 else ""), file=sys.stderr)
     if dispositions_path and dispositions_path.exists():
         overrides = json.loads(dispositions_path.read_text())
         for f in findings:
@@ -2998,6 +3155,7 @@ def main(argv: list[str] | None = None) -> int:
     coverage = control_coverage(findings, len(templates))
 
     meta = {
+        "schema_version": FINDINGS_SCHEMA_VERSION,
         "scan_date": scan_date, "commit_sha": sha, "branch": branch, "repo_root": repo.name,
         "templates_commit_sha": templates_sha, "templates_with_uncommitted_edits": templates_dirty,
         "templates_assessed": len(templates), "terraform_files": len(terraform), "skipped_files": len(skipped),

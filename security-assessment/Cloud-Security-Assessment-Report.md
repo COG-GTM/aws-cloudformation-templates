@@ -1,25 +1,25 @@
 # Cloud Security Assessment Report
 
-Infrastructure-as-code baseline: CloudFormation templates in this repository at commit `a601ed36896006a3d8032074ca5c2627b21d8f67` (branch `devin/1789423490-cloud-security-assessment`), assessed 2026-09-14 23:45 UTC. The assessed templates were last changed in commit `a0f43bc6d20813052892546f445037cf84c75b54`; later commits on this branch (including the commit that adds these generated artifacts) do not change any assessed template. Prepared in the form of CDRL A008, Cloud Security Assessment Report, for the Government and the system owner.
+Infrastructure-as-code baseline: CloudFormation templates in this repository at commit `ae3ddfdf161691fa1da37b8e3c256e4d59998761` (branch `devin/1789423490-cloud-security-assessment`), assessed 2026-09-15 00:05 UTC. The assessed templates were last changed in commit `a0f43bc6d20813052892546f445037cf84c75b54`; later commits on this branch (including the commit that adds these generated artifacts) do not change any assessed template. Prepared in the form of CDRL A008, Cloud Security Assessment Report, for the Government and the system owner.
 
 ## 1. Executive summary
 
 This assessment treats the 160 CloudFormation templates in the repository as the infrastructure-as-code baseline for a set of Government cloud workloads. 3 open-source scanners (Checkov 3.3.17, cfn_nag 0.8.10, cfn-lint 1.56.3) and a custom rule pack of 55 checks were run against the 160 templates. Checkov did not process 7 template(s); cfn_nag did not process 12 template(s); cfn-lint did not process 2 template(s) (listed in the Method sheet); those templates are covered by the custom rule pack and the remaining scanners only. cfn-lint deliberately excluded 29 template(s) under the repository's lint conventions (scripts/lint-single.sh). Each result was normalized into one schema, mapped to NIST SP 800-53 Rev. 5 controls, the CIS AWS Foundations Benchmark v3.0 where a recommendation exists, and a DoD Cloud Computing SRG topic area, and assigned a DISA-style severity (CAT I, CAT II, CAT III) with a one-line justification.
 
-The scan produced 1190 findings in 149 of 160 templates. 1172 findings are open, 0 are marked Remediated in PR, and 18 are recommended for risk acceptance.
+The scan produced 1192 findings in 149 of 160 templates. 1174 findings are open, 0 are marked Remediated in PR, and 18 are recommended for risk acceptance.
 
 | Severity | Open | Remediated in PR | Risk acceptance recommended | All findings |
 |---|---|---|---|---|
 | CAT I | 9 | 0 | 0 | 9 |
 | CAT II | 371 | 0 | 0 | 371 |
-| CAT III | 792 | 0 | 18 | 810 |
-| Total | 1172 | 0 | 18 | 1190 |
+| CAT III | 794 | 0 | 18 | 812 |
+| Total | 1174 | 0 | 18 | 1192 |
 
 Key results:
 
 - 9 open CAT I findings: security group allows unrestricted ingress to administrative ports (4); security group allows unrestricted ingress on all ports and protocols (4); database storage is not encrypted at rest (1). They head the risk-ranked list in section 3 and are the first remediation targets.
 - 371 open CAT II findings, dominated by: eC2 instance does not require IMDSv2 (HttpTokens: required) (60); eC2 Subnet should not have MapPublicIpOnLaunch set to true (cfn_nag W33) (26); security group admin-port ingress defaults to an unrestricted CIDR parameter (25); s3 bucket does not deny non-TLS (aws:SecureTransport=false) requests (25).
-- 792 open CAT III findings, dominated by: iAM role has no permissions boundary (87); missing egress rule means all traffic is allowed outbound.  Make this explicit if it is desired configuration (cfn_nag F1000) (62); ensure every security groups rule has a description (checkov CKV_AWS_23) (59); iAM role uses inline policies (55).
+- 794 open CAT III findings, dominated by: iAM role has no permissions boundary (87); missing egress rule means all traffic is allowed outbound.  Make this explicit if it is desired configuration (cfn_nag F1000) (62); ensure every security groups rule has a description (checkov CKV_AWS_23) (59); iAM role uses inline policies (55).
 - The dominant systemic pattern is the absence of secure defaults. The same weakness recurs across service directories because each template was written independently; section 5 quantifies this and section 6 recommends automation that prevents it.
 - No Terraform sources exist in this revision, so the Terraform portion of the tasking is not applicable. The runner scans `.tf` files automatically when they are added.
 
@@ -44,7 +44,7 @@ The custom rule pack (`scripts/cloud_security_assessment.py`, rule IDs `CSA-*`) 
 
 ### 2.3 Normalization, severity and ranking
 
-- Every result carries file and line evidence, at least one NIST SP 800-53 Rev. 5 control, a DoD Cloud Computing SRG area, tool and rule IDs, a recommended remediation and a disposition. 692 findings come from the custom rule pack (of which many are corroborated by Checkov or cfn_nag on the same resource) and 498 are tool-only findings.
+- Every result carries file and line evidence, at least one NIST SP 800-53 Rev. 5 control, a DoD Cloud Computing SRG area, tool and rule IDs, a recommended remediation and a disposition. 693 findings come from the custom rule pack (of which many are corroborated by Checkov or cfn_nag on the same resource) and 499 are tool-only findings.
 - CAT I (direct and immediate loss of confidentiality, integrity or availability) is assigned only when the custom rule pack verified the exact condition on the parsed template. Tool-only results that depend on pattern heuristics are capped at CAT II. A cfn_nag result that repeats an equivalent Checkov check on the same resource is merged so a weakness is counted once.
 - Risk rank 1 is the highest risk. The score is the severity base (CAT I 300, CAT II 200, CAT III 100) plus modifiers for Internet exposure, credential material, data stores, corroborating tools and core service directories. Open findings rank ahead of closed ones.
 - CIS AWS Foundations Benchmark v3.0.0 IDs are cited only where the AWS Security Hub CIS v3.0.0 control mapping confirms a matching recommendation. No IAM benchmark IDs are cited for template-level IAM findings because the benchmark's IAM section addresses account-level settings.
@@ -95,9 +95,9 @@ A finding that maps to controls in two families is counted in both. Counts are o
 | Control family | Open | CAT I | CAT II | CAT III | Most-cited controls (count) |
 |---|---|---|---|---|---|
 | System and Communications Protection | 493 | 9 | 253 | 231 | SC-7 (316), SC-28(1) (110), SC-8(1) (88), SC-8 (68), SC-28 (66), SC-7(5) (53) |
-| Configuration Management | 472 | 4 | 86 | 382 | CM-6 (319), CM-5 (142), CM-2 (28), CM-3 (15), CM-7 (11) |
+| Configuration Management | 473 | 4 | 86 | 383 | CM-6 (320), CM-5 (142), CM-2 (29), CM-3 (15), CM-7 (11) |
 | Access Control | 398 | 4 | 195 | 199 | AC-6 (309), AC-6(1) (144), AC-3 (93), AC-17 (37), AC-4 (36) |
-| Audit and Accountability | 135 | 0 | 20 | 115 | AU-12 (132), AU-2 (94), AU-11 (2), AU-9 (1) |
+| Audit and Accountability | 136 | 0 | 20 | 116 | AU-12 (133), AU-2 (95), AU-11 (2), AU-9 (1) |
 | Contingency Planning | 89 | 0 | 4 | 85 | CP-9 (89), CP-10 (34) |
 | System and Information Integrity | 73 | 0 | 19 | 54 | SI-4 (70), SI-12 (2), SI-2 (1) |
 | Identification and Authentication | 33 | 0 | 15 | 18 | IA-5 (31), IA-5(7) (3), IA-2 (2) |
@@ -106,12 +106,12 @@ Control coverage (open findings per control and templates with at least one find
 
 | Control | Title | Open findings | Templates with findings / assessed |
 |---|---|---|---|
-| CM-6 | Configuration Settings | 319 | 122 / 160 |
+| CM-6 | Configuration Settings | 320 | 122 / 160 |
 | AC-6 | Least Privilege | 309 | 101 / 160 |
 | SC-7 | Boundary Protection | 316 | 92 / 160 |
-| AU-12 | Audit Record Generation | 132 | 79 / 160 |
+| AU-12 | Audit Record Generation | 133 | 80 / 160 |
 | CM-5 | Access Restrictions for Change | 142 | 78 / 160 |
-| AU-2 | Event Logging | 94 | 63 / 160 |
+| AU-2 | Event Logging | 95 | 64 / 160 |
 | SC-28(1) | Protection of Information at Rest / Cryptographic Protection | 110 | 61 / 160 |
 | AC-6(1) | Least Privilege / Authorize Access to Security Functions | 144 | 59 / 160 |
 | SC-8(1) | Transmission Confidentiality and Integrity / Cryptographic Protection | 88 | 57 / 160 |
@@ -126,16 +126,16 @@ The counts below compare open rule hits with the number of resources of the rele
 | S3 buckets without declared server-side encryption | 13 of 46 | 28% | CSA-ENC-001 |
 | S3 buckets without an aws:SecureTransport deny policy | 25 of 46 | 54% | CSA-TLS-001 |
 | S3 buckets without a Public Access Block | 13 of 46 | 28% | CSA-NET-007 |
-| S3 buckets without server access logging | 38 of 46 | 83% | CSA-LOG-001 |
+| S3 buckets without server access logging | 39 of 46 | 85% | CSA-LOG-001 |
 | EC2 instances, launch templates and launch configurations without IMDSv2 required | 60 of 60 | 100% | CSA-CFG-001 |
-| EBS volumes and block device mappings without encryption | 15 of 61 | 25% | CSA-ENC-004 |
+| EC2 volumes, instances, launch templates and launch configurations with unencrypted block storage | 15 of 61 | 25% | CSA-ENC-004 |
 | Database clusters and instances without storage encryption | 1 of 8 | 12% | CSA-ENC-003 |
 | VPCs without a flow log | 19 of 19 | 100% | CSA-LOG-002 |
 | Load balancers without access logging | 19 of 20 | 95% | CSA-LOG-003 |
-| Security groups with administrative ports open to the Internet (all severities) | 29 of 74 | 39% | CSA-NET-001 |
+| Security groups with administrative ports open to the Internet (all severities) | 29 of 99 | 29% | CSA-NET-001 |
 | IAM roles without a permissions boundary | 87 of 88 | 99% | CSA-IAM-007 |
 | IAM roles with inline policies | 55 of 88 | 62% | CSA-IAM-006 |
-| IAM policies granting write actions on Resource * | 22 of 90 | 24% | CSA-IAM-003 |
+| IAM principals and policies granting write actions on Resource * | 20 of 106 | 19% | CSA-IAM-003 |
 | Stateful resources without deletion protection or a Retain policy | 51 of 62 | 82% | CSA-BKP-002 |
 | Lambda functions without active tracing | 38 of 38 | 100% | CSA-MON-001 |
 
@@ -171,7 +171,7 @@ PR 2 fixes the ten highest-ranked open findings (9 CAT I, 1 CAT II; 9 CAT I find
 
 ### 8.2 Open for Government disposition
 
-- 9 CAT I, 371 CAT II and 792 CAT III findings remain open. Sheet `POAM-Draft` lists every open CAT I and CAT II finding in POA&M layout with an owner role, milestones and a scheduled-completion placeholder.
+- 9 CAT I, 371 CAT II and 794 CAT III findings remain open. Sheet `POAM-Draft` lists every open CAT I and CAT II finding in POA&M layout with an owner role, milestones and a scheduled-completion placeholder.
 - 18 findings are recommended for risk acceptance: 18 × Security group allows unrestricted ingress on an application port (`CSA-NET-004`, CAT III). Each carries a disposition note in the tracker. The system owner must confirm each acceptance and record it.
 - Suggested schedule from Government acceptance of this report: CAT I 30 days, CAT II 90 days, CAT III 180 days, consistent with the target-date placeholders in the tracker.
 
@@ -224,7 +224,7 @@ One row per custom rule. Tool IDs are the Checkov and cfn_nag checks merged into
 | CSA-NET-008 (CAT II, 1) | EKS cluster API endpoint is reachable from the Internet | SC-7, AC-17 / CIS n/a | boundary; CKV_AWS_38, CKV_AWS_39 |
 | CSA-NET-009 (CAT II, 2) | Data-tier subnet group uses public subnets | SC-7, AC-4 / CIS n/a | boundary; no tool overlap |
 | CSA-NET-010 (CAT II, 2) | API method or function URL has no authorization | AC-3, IA-2, SC-7 / CIS n/a | boundary; CKV_AWS_258, CKV_AWS_309, CKV_AWS_59 |
-| CSA-LOG-001 (CAT III, 38) | S3 bucket has no server access logging | AU-2, AU-12 / CIS n/a | logging; CKV_AWS_18, W35 |
+| CSA-LOG-001 (CAT III, 39) | S3 bucket has no server access logging | AU-2, AU-12 / CIS n/a | logging; CKV_AWS_18, W35 |
 | CSA-LOG-002 (CAT II, 19) | VPC has no flow log | AU-2, AU-12, SI-4 / CIS 3.7 | logging; W60 |
 | CSA-LOG-003 (CAT III, 19) | Load balancer access logging is disabled | AU-2, AU-12 / CIS n/a | logging; CKV_AWS_91, CKV_AWS_92, W26, W52 |
 | CSA-LOG-004 (CAT III, 2) | API Gateway stage has no execution or access logging | AU-2, AU-12 / CIS n/a | logging; CKV_AWS_76, CKV_AWS_95 |

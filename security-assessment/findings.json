@@ -1,7 +1,8 @@
 {
   "metadata": {
-    "scan_date": "2026-09-14 23:45 UTC",
-    "commit_sha": "a601ed36896006a3d8032074ca5c2627b21d8f67",
+    "schema_version": 1,
+    "scan_date": "2026-09-15 00:05 UTC",
+    "commit_sha": "ae3ddfdf161691fa1da37b8e3c256e4d59998761",
     "branch": "devin/1789423490-cloud-security-assessment",
     "repo_root": "aws-cloudformation-templates",
     "templates_commit_sha": "a0f43bc6d20813052892546f445037cf84c75b54",
@@ -160,7 +161,7 @@
         "status": "ran",
         "note": "7 template(s) could not be parsed by checkov and were covered by the custom rule pack only: CloudFormation/StackSets/common-resources.yaml, RainModules/bucket.yml, RainModules/static-site.yml, Solutions/GitLab/GitLabServer.yaml, Solutions/GitLabAndVSCode/GitLabAndVSCode.yaml, Solutions/Gitea/Gitea.yaml, Solutions/VSCode/VSCodeServer.yaml",
         "raw_count": 478,
-        "duration_s": 53.4,
+        "duration_s": 51.6,
         "unparsed": [
           "CloudFormation/StackSets/common-resources.yaml",
           "RainModules/bucket.yml",
@@ -178,7 +179,7 @@
         "status": "ran",
         "note": "12 template(s) could not be parsed by cfn_nag: CloudFormation/fn-foreach-ddb.yaml, CloudFormation/fn-foreach-s3-outputs.yaml, CloudFormation/MacrosExamples/Boto3/example.yaml, CloudFormation/MacrosExamples/ExecutionRoleBuilder/example.yaml, CloudFormation/StackSets/common-resources.yaml, ECS/ECS_Schedule_Example.yaml, RainModules/bucket.yml, RainModules/static-site.yml, Solutions/GitLab/GitLabServer.yaml, Solutions/GitLabAndVSCode/GitLabAndVSCode.yaml, Solutions/Gitea/Gitea.yaml, Solutions/VSCode/VSCodeServer.yaml",
         "raw_count": 518,
-        "duration_s": 4.4,
+        "duration_s": 4.2,
         "unparsed": [
           "CloudFormation/fn-foreach-ddb.yaml",
           "CloudFormation/fn-foreach-s3-outputs.yaml",
@@ -201,7 +202,7 @@
         "status": "ran",
         "note": "56 warning/informational messages not treated as findings; 29 template(s) not linted per the repository lint convention (macro examples and Rain module fragments): CloudFormation/MacrosExamples/Boto3/example.yaml, CloudFormation/MacrosExamples/Boto3/macro.yaml, CloudFormation/MacrosExamples/Count/template.yaml, CloudFormation/MacrosExamples/Count/test.yaml, CloudFormation/MacrosExamples/DateFunctions/date.yaml, CloudFormation/MacrosExamples/DateFunctions/date_example.yaml, CloudFormation/MacrosExamples/DatetimeNow/datetimenow.yaml, CloudFormation/MacrosExamples/DatetimeNow/datetimenow_example.yaml, CloudFormation/MacrosExamples/ExecutionRoleBuilder/example.yaml, CloudFormation/MacrosExamples/ExecutionRoleBuilder/macro.yaml, CloudFormation/MacrosExamples/Explode/macro.yaml, CloudFormation/MacrosExamples/Explode/test.yaml, CloudFormation/MacrosExamples/PyPlate/python.yaml, CloudFormation/MacrosExamples/PyPlate/python_example.yaml, CloudFormation/MacrosExamples/S3Objects/example.yaml, CloudFormation/MacrosExamples/S3Objects/macro.yaml, CloudFormation/MacrosExamples/StackMetrics/example.yaml, CloudFormation/MacrosExamples/StackMetrics/macro.yaml, CloudFormation/MacrosExamples/StringFunctions/string.yaml, CloudFormation/MacrosExamples/StringFunctions/string_example.yaml, RainModules/api-resource.yml, RainModules/bucket-policy.yml, RainModules/bucket.yml, RainModules/cloudfront-nocache.yml, RainModules/cognito.yml, RainModules/load-balancer.yml, RainModules/rest-api.yml, RainModules/static-site.yml, RainModules/vpc.yml; 2 template(s) could not be linted (invocation failed or timed out, or `rain pkg` unavailable or failed): CloudFormation/StackSets/common-resources-stackset.yaml, CloudFormation/StackSets/common-resources.yaml",
         "raw_count": 14,
-        "duration_s": 20.1,
+        "duration_s": 20.3,
         "unparsed": [
           "CloudFormation/StackSets/common-resources-stackset.yaml",
           "CloudFormation/StackSets/common-resources.yaml"
@@ -863,7 +864,7 @@
           "CKV_AWS_18",
           "W35"
         ],
-        "hits": 38
+        "hits": 39
       },
       {
         "id": "CSA-LOG-002",
@@ -1762,34 +1763,34 @@
     "cfn_lint_warnings": 56
   },
   "summary": {
-    "total_findings": 1190,
-    "open_findings": 1172,
+    "total_findings": 1192,
+    "open_findings": 1174,
     "open_by_severity": {
       "CAT I": 9,
       "CAT II": 371,
-      "CAT III": 792
+      "CAT III": 794
     },
     "all_by_severity": {
       "CAT I": 9,
       "CAT II": 371,
-      "CAT III": 810
+      "CAT III": 812
     },
     "by_disposition": {
-      "Open": 1172,
+      "Open": 1174,
       "Risk acceptance recommended": 18
     },
     "by_source": {
       "custom+checkov+cfn_nag": 92,
       "custom+cfn_nag": 80,
       "custom+checkov": 80,
-      "custom": 440,
+      "custom": 441,
       "cfn_nag": 227,
       "checkov+cfn_nag": 86,
       "checkov": 172,
-      "cfn-lint": 13
+      "cfn-lint": 14
     },
     "open_by_service_directory": {
-      "Solutions": 333,
+      "Solutions": 335,
       "CloudFormation": 231,
       "ECS": 135,
       "IoT": 91,
@@ -1818,9 +1819,9 @@
     },
     "open_by_control_family": {
       "System and Communications Protection": 493,
-      "Configuration Management": 472,
+      "Configuration Management": 473,
       "Access Control": 398,
-      "Audit and Accountability": 135,
+      "Audit and Accountability": 136,
       "Contingency Planning": 89,
       "System and Information Integrity": 73,
       "Identification and Authentication": 33
@@ -1834,8 +1835,8 @@
       "control": "CM-6",
       "family": "Configuration Management",
       "title": "Configuration Settings",
-      "findings": 319,
-      "open": 319,
+      "findings": 320,
+      "open": 320,
       "remediated": 0,
       "cat_i_open": 0,
       "templates_with_findings": 122,
@@ -1889,11 +1890,11 @@
       "control": "AU-12",
       "family": "Audit and Accountability",
       "title": "Audit Record Generation",
-      "findings": 132,
-      "open": 132,
+      "findings": 133,
+      "open": 133,
       "remediated": 0,
       "cat_i_open": 0,
-      "templates_with_findings": 79,
+      "templates_with_findings": 80,
       "templates_assessed": 160
     },
     {
@@ -1911,11 +1912,11 @@
       "control": "AU-2",
       "family": "Audit and Accountability",
       "title": "Event Logging",
-      "findings": 94,
-      "open": 94,
+      "findings": 95,
+      "open": 95,
       "remediated": 0,
       "cat_i_open": 0,
-      "templates_with_findings": 63,
+      "templates_with_findings": 64,
       "templates_assessed": 160
     },
     {
@@ -2054,8 +2055,8 @@
       "control": "CM-2",
       "family": "Configuration Management",
       "title": "Baseline Configuration",
-      "findings": 28,
-      "open": 28,
+      "findings": 29,
+      "open": 29,
       "remediated": 0,
       "cat_i_open": 0,
       "templates_with_findings": 22,
@@ -6574,7 +6575,7 @@
       "resource_logical_id": "BucketToCopyA",
       "resource_type": "AWS::S3::Bucket",
       "title": "S3 bucket does not declare server-side encryption",
-      "description": "The bucket has no BucketEncryption block. Encryption then depends on the account default (SSE-S3) and the baseline cannot show that data at rest is protected with an approved key.",
+      "description": "The bucket has no BucketEncryption block, or the block declares no ServerSideEncryptionByDefault rule with an SSEAlgorithm. Encryption then depends on the account default (SSE-S3) and the baseline cannot show that data at rest is protected with an approved key.",
       "evidence": "CloudFormation/MacrosExamples/Count/test.yaml:16 \u2014 Properties.BucketEncryption is absent",
       "evidence_file": "CloudFormation/MacrosExamples/Count/test.yaml",
       "evidence_line": 16,
@@ -6617,7 +6618,7 @@
       "resource_logical_id": "BucketToCopyB",
       "resource_type": "AWS::S3::Bucket",
       "title": "S3 bucket does not declare server-side encryption",
-      "description": "The bucket has no BucketEncryption block. Encryption then depends on the account default (SSE-S3) and the baseline cannot show that data at rest is protected with an approved key.",
+      "description": "The bucket has no BucketEncryption block, or the block declares no ServerSideEncryptionByDefault rule with an SSEAlgorithm. Encryption then depends on the account default (SSE-S3) and the baseline cannot show that data at rest is protected with an approved key.",
       "evidence": "CloudFormation/MacrosExamples/Count/test.yaml:35 \u2014 Properties.BucketEncryption is absent",
       "evidence_file": "CloudFormation/MacrosExamples/Count/test.yaml",
       "evidence_line": 35,
@@ -6660,7 +6661,7 @@
       "resource_logical_id": "BucketToCopyC",
       "resource_type": "AWS::S3::Bucket",
       "title": "S3 bucket does not declare server-side encryption",
-      "description": "The bucket has no BucketEncryption block. Encryption then depends on the account default (SSE-S3) and the baseline cannot show that data at rest is protected with an approved key.",
+      "description": "The bucket has no BucketEncryption block, or the block declares no ServerSideEncryptionByDefault rule with an SSEAlgorithm. Encryption then depends on the account default (SSE-S3) and the baseline cannot show that data at rest is protected with an approved key.",
       "evidence": "CloudFormation/MacrosExamples/Count/test.yaml:56 \u2014 Properties.BucketEncryption is absent",
       "evidence_file": "CloudFormation/MacrosExamples/Count/test.yaml",
       "evidence_line": 56,
@@ -6703,7 +6704,7 @@
       "resource_logical_id": "BucketToCopyD",
       "resource_type": "AWS::S3::Bucket",
       "title": "S3 bucket does not declare server-side encryption",
-      "description": "The bucket has no BucketEncryption block. Encryption then depends on the account default (SSE-S3) and the baseline cannot show that data at rest is protected with an approved key.",
+      "description": "The bucket has no BucketEncryption block, or the block declares no ServerSideEncryptionByDefault rule with an SSEAlgorithm. Encryption then depends on the account default (SSE-S3) and the baseline cannot show that data at rest is protected with an approved key.",
       "evidence": "CloudFormation/MacrosExamples/Count/test.yaml:75 \u2014 Properties.BucketEncryption is absent",
       "evidence_file": "CloudFormation/MacrosExamples/Count/test.yaml",
       "evidence_line": 75,
@@ -6746,7 +6747,7 @@
       "resource_logical_id": "S3Bucket",
       "resource_type": "AWS::S3::Bucket",
       "title": "S3 bucket does not declare server-side encryption",
-      "description": "The bucket has no BucketEncryption block. Encryption then depends on the account default (SSE-S3) and the baseline cannot show that data at rest is protected with an approved key.",
+      "description": "The bucket has no BucketEncryption block, or the block declares no ServerSideEncryptionByDefault rule with an SSEAlgorithm. Encryption then depends on the account default (SSE-S3) and the baseline cannot show that data at rest is protected with an approved key.",
       "evidence": "CloudFormation/MacrosExamples/DateFunctions/date_example.yaml:25 \u2014 Properties.BucketEncryption is absent",
       "evidence_file": "CloudFormation/MacrosExamples/DateFunctions/date_example.yaml",
       "evidence_line": 25,
@@ -6789,7 +6790,7 @@
       "resource_logical_id": "S3Bucket",
       "resource_type": "AWS::S3::Bucket",
       "title": "S3 bucket does not declare server-side encryption",
-      "description": "The bucket has no BucketEncryption block. Encryption then depends on the account default (SSE-S3) and the baseline cannot show that data at rest is protected with an approved key.",
+      "description": "The bucket has no BucketEncryption block, or the block declares no ServerSideEncryptionByDefault rule with an SSEAlgorithm. Encryption then depends on the account default (SSE-S3) and the baseline cannot show that data at rest is protected with an approved key.",
       "evidence": "CloudFormation/MacrosExamples/DatetimeNow/datetimenow_example.yaml:7 \u2014 Properties.BucketEncryption is absent",
       "evidence_file": "CloudFormation/MacrosExamples/DatetimeNow/datetimenow_example.yaml",
       "evidence_line": 7,
@@ -6832,7 +6833,7 @@
       "resource_logical_id": "Bucket",
       "resource_type": "AWS::S3::Bucket",
       "title": "S3 bucket does not declare server-side encryption",
-      "description": "The bucket has no BucketEncryption block. Encryption then depends on the account default (SSE-S3) and the baseline cannot show that data at rest is protected with an approved key.",
+      "description": "The bucket has no BucketEncryption block, or the block declares no ServerSideEncryptionByDefault rule with an SSEAlgorithm. Encryption then depends on the account default (SSE-S3) and the baseline cannot show that data at rest is protected with an approved key.",
       "evidence": "CloudFormation/MacrosExamples/Explode/test.yaml:15 \u2014 Properties.BucketEncryption is absent",
       "evidence_file": "CloudFormation/MacrosExamples/Explode/test.yaml",
       "evidence_line": 15,
@@ -6875,7 +6876,7 @@
       "resource_logical_id": "NonExplodingBucket",
       "resource_type": "AWS::S3::Bucket",
       "title": "S3 bucket does not declare server-side encryption",
-      "description": "The bucket has no BucketEncryption block. Encryption then depends on the account default (SSE-S3) and the baseline cannot show that data at rest is protected with an approved key.",
+      "description": "The bucket has no BucketEncryption block, or the block declares no ServerSideEncryptionByDefault rule with an SSEAlgorithm. Encryption then depends on the account default (SSE-S3) and the baseline cannot show that data at rest is protected with an approved key.",
       "evidence": "CloudFormation/MacrosExamples/Explode/test.yaml:35 \u2014 Properties.BucketEncryption is absent",
       "evidence_file": "CloudFormation/MacrosExamples/Explode/test.yaml",
       "evidence_line": 35,
@@ -6918,7 +6919,7 @@
       "resource_logical_id": "S3Bucket",
       "resource_type": "AWS::S3::Bucket",
       "title": "S3 bucket does not declare server-side encryption",
-      "description": "The bucket has no BucketEncryption block. Encryption then depends on the account default (SSE-S3) and the baseline cannot show that data at rest is protected with an approved key.",
+      "description": "The bucket has no BucketEncryption block, or the block declares no ServerSideEncryptionByDefault rule with an SSEAlgorithm. Encryption then depends on the account default (SSE-S3) and the baseline cannot show that data at rest is protected with an approved key.",
       "evidence": "CloudFormation/MacrosExamples/PyPlate/python_example.yaml:15 \u2014 Properties.BucketEncryption is absent",
       "evidence_file": "CloudFormation/MacrosExamples/PyPlate/python_example.yaml",
       "evidence_line": 15,
@@ -6961,7 +6962,7 @@
       "resource_logical_id": "Bucket",
       "resource_type": "AWS::S3::Bucket",
       "title": "S3 bucket does not declare server-side encryption",
-      "description": "The bucket has no BucketEncryption block. Encryption then depends on the account default (SSE-S3) and the baseline cannot show that data at rest is protected with an approved key.",
+      "description": "The bucket has no BucketEncryption block, or the block declares no ServerSideEncryptionByDefault rule with an SSEAlgorithm. Encryption then depends on the account default (SSE-S3) and the baseline cannot show that data at rest is protected with an approved key.",
       "evidence": "CloudFormation/MacrosExamples/S3Objects/example.yaml:5 \u2014 Properties.BucketEncryption is absent",
       "evidence_file": "CloudFormation/MacrosExamples/S3Objects/example.yaml",
       "evidence_line": 5,
@@ -7004,7 +7005,7 @@
       "resource_logical_id": "Bucket1",
       "resource_type": "AWS::S3::Bucket",
       "title": "S3 bucket does not declare server-side encryption",
-      "description": "The bucket has no BucketEncryption block. Encryption then depends on the account default (SSE-S3) and the baseline cannot show that data at rest is protected with an approved key.",
+      "description": "The bucket has no BucketEncryption block, or the block declares no ServerSideEncryptionByDefault rule with an SSEAlgorithm. Encryption then depends on the account default (SSE-S3) and the baseline cannot show that data at rest is protected with an approved key.",
       "evidence": "CloudFormation/MacrosExamples/StackMetrics/example.yaml:5 \u2014 Properties.BucketEncryption is absent",
       "evidence_file": "CloudFormation/MacrosExamples/StackMetrics/example.yaml",
       "evidence_line": 5,
@@ -7047,7 +7048,7 @@
       "resource_logical_id": "S3Bucket",
       "resource_type": "AWS::S3::Bucket",
       "title": "S3 bucket does not declare server-side encryption",
-      "description": "The bucket has no BucketEncryption block. Encryption then depends on the account default (SSE-S3) and the baseline cannot show that data at rest is protected with an approved key.",
+      "description": "The bucket has no BucketEncryption block, or the block declares no ServerSideEncryptionByDefault rule with an SSEAlgorithm. Encryption then depends on the account default (SSE-S3) and the baseline cannot show that data at rest is protected with an approved key.",
       "evidence": "CloudFormation/MacrosExamples/StringFunctions/string_example.yaml:12 \u2014 Properties.BucketEncryption is absent",
       "evidence_file": "CloudFormation/MacrosExamples/StringFunctions/string_example.yaml",
       "evidence_line": 12,
@@ -7090,7 +7091,7 @@
       "resource_logical_id": "LogsBucket",
       "resource_type": "AWS::S3::Bucket",
       "title": "S3 bucket does not declare server-side encryption",
-      "description": "The bucket has no BucketEncryption block. Encryption then depends on the account default (SSE-S3) and the baseline cannot show that data at rest is protected with an approved key.",
+      "description": "The bucket has no BucketEncryption block, or the block declares no ServerSideEncryptionByDefault rule with an SSEAlgorithm. Encryption then depends on the account default (SSE-S3) and the baseline cannot show that data at rest is protected with an approved key.",
       "evidence": "ElasticLoadBalancing/ELB_Access_Logs_And_Connection_Draining.yaml:133 \u2014 Properties.BucketEncryption is absent",
       "evidence_file": "ElasticLoadBalancing/ELB_Access_Logs_And_Connection_Draining.yaml",
       "evidence_line": 133,
@@ -19054,7 +19055,7 @@
       "resource_logical_id": "S3BucketNotification",
       "resource_type": "AWS::S3::Bucket",
       "title": "S3 bucket has no server access logging",
-      "description": "LoggingConfiguration is absent. Object-level access to the bucket cannot be reconstructed for audit or incident response.",
+      "description": "LoggingConfiguration is absent or names no DestinationBucketName (an empty block disables logging). Object-level access to the bucket cannot be reconstructed for audit or incident response.",
       "evidence": "S3/S3_LambdaTrigger.yaml:62 \u2014 Properties.LoggingConfiguration is absent",
       "evidence_file": "S3/S3_LambdaTrigger.yaml",
       "evidence_line": 62,
@@ -19507,7 +19508,7 @@
       "resource_logical_id": "Bucket",
       "resource_type": "AWS::S3::Bucket",
       "title": "S3 bucket has no server access logging",
-      "description": "LoggingConfiguration is absent. Object-level access to the bucket cannot be reconstructed for audit or incident response.",
+      "description": "LoggingConfiguration is absent or names no DestinationBucketName (an empty block disables logging). Object-level access to the bucket cannot be reconstructed for audit or incident response.",
       "evidence": "S3/s3-bucket-and-policy-for-caa-v1.yaml:16 \u2014 Properties.LoggingConfiguration is absent",
       "evidence_file": "S3/s3-bucket-and-policy-for-caa-v1.yaml",
       "evidence_line": 16,
@@ -19550,7 +19551,7 @@
       "resource_logical_id": "LoggingBucket",
       "resource_type": "AWS::S3::Bucket",
       "title": "S3 bucket has no server access logging",
-      "description": "LoggingConfiguration is absent. Object-level access to the bucket cannot be reconstructed for audit or incident response.",
+      "description": "LoggingConfiguration is absent or names no DestinationBucketName (an empty block disables logging). Object-level access to the bucket cannot be reconstructed for audit or incident response.",
       "evidence": "Solutions/CloudFrontCustomOriginLambda@Edge/CloudFront.yaml:406 \u2014 Properties.LoggingConfiguration is absent",
       "evidence_file": "Solutions/CloudFrontCustomOriginLambda@Edge/CloudFront.yaml",
       "evidence_line": 406,
@@ -19677,7 +19678,7 @@
       "resource_logical_id": "PipelineS3Bucket",
       "resource_type": "AWS::S3::Bucket",
       "title": "S3 bucket has no server access logging",
-      "description": "LoggingConfiguration is absent. Object-level access to the bucket cannot be reconstructed for audit or incident response.",
+      "description": "LoggingConfiguration is absent or names no DestinationBucketName (an empty block disables logging). Object-level access to the bucket cannot be reconstructed for audit or incident response.",
       "evidence": "Solutions/CodeBuildAndCodePipeline/cloudformation-codebuild-template.yaml:19 \u2014 Properties.LoggingConfiguration is absent",
       "evidence_file": "Solutions/CodeBuildAndCodePipeline/cloudformation-codebuild-template.yaml",
       "evidence_line": 19,
@@ -19720,7 +19721,7 @@
       "resource_logical_id": "S3BucketDestination",
       "resource_type": "AWS::S3::Bucket",
       "title": "S3 bucket has no server access logging",
-      "description": "LoggingConfiguration is absent. Object-level access to the bucket cannot be reconstructed for audit or incident response.",
+      "description": "LoggingConfiguration is absent or names no DestinationBucketName (an empty block disables logging). Object-level access to the bucket cannot be reconstructed for audit or incident response.",
       "evidence": "Solutions/S3CrossAccountReplicationWithKMS/templates/destination.yaml:47 \u2014 Properties.LoggingConfiguration is absent",
       "evidence_file": "Solutions/S3CrossAccountReplicationWithKMS/templates/destination.yaml",
       "evidence_line": 47,
@@ -19763,7 +19764,7 @@
       "resource_logical_id": "S3BucketSource",
       "resource_type": "AWS::S3::Bucket",
       "title": "S3 bucket has no server access logging",
-      "description": "LoggingConfiguration is absent. Object-level access to the bucket cannot be reconstructed for audit or incident response.",
+      "description": "LoggingConfiguration is absent or names no DestinationBucketName (an empty block disables logging). Object-level access to the bucket cannot be reconstructed for audit or incident response.",
       "evidence": "Solutions/S3CrossAccountReplicationWithKMS/templates/source.yaml:36 \u2014 Properties.LoggingConfiguration is absent",
       "evidence_file": "Solutions/S3CrossAccountReplicationWithKMS/templates/source.yaml",
       "evidence_line": 36,
@@ -20311,7 +20312,7 @@
       "resource_logical_id": "BucketToCopyA",
       "resource_type": "AWS::S3::Bucket",
       "title": "S3 bucket has no server access logging",
-      "description": "LoggingConfiguration is absent. Object-level access to the bucket cannot be reconstructed for audit or incident response.",
+      "description": "LoggingConfiguration is absent or names no DestinationBucketName (an empty block disables logging). Object-level access to the bucket cannot be reconstructed for audit or incident response.",
       "evidence": "CloudFormation/MacrosExamples/Count/test.yaml:16 \u2014 Properties.LoggingConfiguration is absent",
       "evidence_file": "CloudFormation/MacrosExamples/Count/test.yaml",
       "evidence_line": 16,
@@ -20354,7 +20355,7 @@
       "resource_logical_id": "BucketToCopyB",
       "resource_type": "AWS::S3::Bucket",
       "title": "S3 bucket has no server access logging",
-      "description": "LoggingConfiguration is absent. Object-level access to the bucket cannot be reconstructed for audit or incident response.",
+      "description": "LoggingConfiguration is absent or names no DestinationBucketName (an empty block disables logging). Object-level access to the bucket cannot be reconstructed for audit or incident response.",
       "evidence": "CloudFormation/MacrosExamples/Count/test.yaml:35 \u2014 Properties.LoggingConfiguration is absent",
       "evidence_file": "CloudFormation/MacrosExamples/Count/test.yaml",
       "evidence_line": 35,
@@ -20397,7 +20398,7 @@
       "resource_logical_id": "BucketToCopyC",
       "resource_type": "AWS::S3::Bucket",
       "title": "S3 bucket has no server access logging",
-      "description": "LoggingConfiguration is absent. Object-level access to the bucket cannot be reconstructed for audit or incident response.",
+      "description": "LoggingConfiguration is absent or names no DestinationBucketName (an empty block disables logging). Object-level access to the bucket cannot be reconstructed for audit or incident response.",
       "evidence": "CloudFormation/MacrosExamples/Count/test.yaml:56 \u2014 Properties.LoggingConfiguration is absent",
       "evidence_file": "CloudFormation/MacrosExamples/Count/test.yaml",
       "evidence_line": 56,
@@ -20440,7 +20441,7 @@
       "resource_logical_id": "BucketToCopyD",
       "resource_type": "AWS::S3::Bucket",
       "title": "S3 bucket has no server access logging",
-      "description": "LoggingConfiguration is absent. Object-level access to the bucket cannot be reconstructed for audit or incident response.",
+      "description": "LoggingConfiguration is absent or names no DestinationBucketName (an empty block disables logging). Object-level access to the bucket cannot be reconstructed for audit or incident response.",
       "evidence": "CloudFormation/MacrosExamples/Count/test.yaml:75 \u2014 Properties.LoggingConfiguration is absent",
       "evidence_file": "CloudFormation/MacrosExamples/Count/test.yaml",
       "evidence_line": 75,
@@ -20483,7 +20484,7 @@
       "resource_logical_id": "S3Bucket",
       "resource_type": "AWS::S3::Bucket",
       "title": "S3 bucket has no server access logging",
-      "description": "LoggingConfiguration is absent. Object-level access to the bucket cannot be reconstructed for audit or incident response.",
+      "description": "LoggingConfiguration is absent or names no DestinationBucketName (an empty block disables logging). Object-level access to the bucket cannot be reconstructed for audit or incident response.",
       "evidence": "CloudFormation/MacrosExamples/DateFunctions/date_example.yaml:25 \u2014 Properties.LoggingConfiguration is absent",
       "evidence_file": "CloudFormation/MacrosExamples/DateFunctions/date_example.yaml",
       "evidence_line": 25,
@@ -20526,7 +20527,7 @@
       "resource_logical_id": "S3Bucket",
       "resource_type": "AWS::S3::Bucket",
       "title": "S3 bucket has no server access logging",
-      "description": "LoggingConfiguration is absent. Object-level access to the bucket cannot be reconstructed for audit or incident response.",
+      "description": "LoggingConfiguration is absent or names no DestinationBucketName (an empty block disables logging). Object-level access to the bucket cannot be reconstructed for audit or incident response.",
       "evidence": "CloudFormation/MacrosExamples/DatetimeNow/datetimenow_example.yaml:7 \u2014 Properties.LoggingConfiguration is absent",
       "evidence_file": "CloudFormation/MacrosExamples/DatetimeNow/datetimenow_example.yaml",
       "evidence_line": 7,
@@ -20569,7 +20570,7 @@
       "resource_logical_id": "Bucket",
       "resource_type": "AWS::S3::Bucket",
       "title": "S3 bucket has no server access logging",
-      "description": "LoggingConfiguration is absent. Object-level access to the bucket cannot be reconstructed for audit or incident response.",
+      "description": "LoggingConfiguration is absent or names no DestinationBucketName (an empty block disables logging). Object-level access to the bucket cannot be reconstructed for audit or incident response.",
       "evidence": "CloudFormation/MacrosExamples/Explode/test.yaml:15 \u2014 Properties.LoggingConfiguration is absent",
       "evidence_file": "CloudFormation/MacrosExamples/Explode/test.yaml",
       "evidence_line": 15,
@@ -20612,7 +20613,7 @@
       "resource_logical_id": "NonExplodingBucket",
       "resource_type": "AWS::S3::Bucket",
       "title": "S3 bucket has no server access logging",
-      "description": "LoggingConfiguration is absent. Object-level access to the bucket cannot be reconstructed for audit or incident response.",
+      "description": "LoggingConfiguration is absent or names no DestinationBucketName (an empty block disables logging). Object-level access to the bucket cannot be reconstructed for audit or incident response.",
       "evidence": "CloudFormation/MacrosExamples/Explode/test.yaml:35 \u2014 Properties.LoggingConfiguration is absent",
       "evidence_file": "CloudFormation/MacrosExamples/Explode/test.yaml",
       "evidence_line": 35,
@@ -20655,7 +20656,7 @@
       "resource_logical_id": "S3Bucket",
       "resource_type": "AWS::S3::Bucket",
       "title": "S3 bucket has no server access logging",
-      "description": "LoggingConfiguration is absent. Object-level access to the bucket cannot be reconstructed for audit or incident response.",
+      "description": "LoggingConfiguration is absent or names no DestinationBucketName (an empty block disables logging). Object-level access to the bucket cannot be reconstructed for audit or incident response.",
       "evidence": "CloudFormation/MacrosExamples/PyPlate/python_example.yaml:15 \u2014 Properties.LoggingConfiguration is absent",
       "evidence_file": "CloudFormation/MacrosExamples/PyPlate/python_example.yaml",
       "evidence_line": 15,
@@ -20698,7 +20699,7 @@
       "resource_logical_id": "Bucket",
       "resource_type": "AWS::S3::Bucket",
       "title": "S3 bucket has no server access logging",
-      "description": "LoggingConfiguration is absent. Object-level access to the bucket cannot be reconstructed for audit or incident response.",
+      "description": "LoggingConfiguration is absent or names no DestinationBucketName (an empty block disables logging). Object-level access to the bucket cannot be reconstructed for audit or incident response.",
       "evidence": "CloudFormation/MacrosExamples/S3Objects/example.yaml:5 \u2014 Properties.LoggingConfiguration is absent",
       "evidence_file": "CloudFormation/MacrosExamples/S3Objects/example.yaml",
       "evidence_line": 5,
@@ -20741,7 +20742,7 @@
       "resource_logical_id": "Bucket1",
       "resource_type": "AWS::S3::Bucket",
       "title": "S3 bucket has no server access logging",
-      "description": "LoggingConfiguration is absent. Object-level access to the bucket cannot be reconstructed for audit or incident response.",
+      "description": "LoggingConfiguration is absent or names no DestinationBucketName (an empty block disables logging). Object-level access to the bucket cannot be reconstructed for audit or incident response.",
       "evidence": "CloudFormation/MacrosExamples/StackMetrics/example.yaml:5 \u2014 Properties.LoggingConfiguration is absent",
       "evidence_file": "CloudFormation/MacrosExamples/StackMetrics/example.yaml",
       "evidence_line": 5,
@@ -20784,7 +20785,7 @@
       "resource_logical_id": "S3Bucket",
       "resource_type": "AWS::S3::Bucket",
       "title": "S3 bucket has no server access logging",
-      "description": "LoggingConfiguration is absent. Object-level access to the bucket cannot be reconstructed for audit or incident response.",
+      "description": "LoggingConfiguration is absent or names no DestinationBucketName (an empty block disables logging). Object-level access to the bucket cannot be reconstructed for audit or incident response.",
       "evidence": "CloudFormation/MacrosExamples/StringFunctions/string_example.yaml:12 \u2014 Properties.LoggingConfiguration is absent",
       "evidence_file": "CloudFormation/MacrosExamples/StringFunctions/string_example.yaml",
       "evidence_line": 12,
@@ -21407,7 +21408,7 @@
       "resource_logical_id": "ConfigBucket",
       "resource_type": "AWS::S3::Bucket",
       "title": "S3 bucket has no server access logging",
-      "description": "LoggingConfiguration is absent. Object-level access to the bucket cannot be reconstructed for audit or incident response.",
+      "description": "LoggingConfiguration is absent or names no DestinationBucketName (an empty block disables logging). Object-level access to the bucket cannot be reconstructed for audit or incident response.",
       "evidence": "Config/Config.yaml:70 \u2014 Properties.LoggingConfiguration is absent",
       "evidence_file": "Config/Config.yaml",
       "evidence_line": 70,
@@ -21491,7 +21492,7 @@
       "resource_logical_id": "S3Bucket",
       "resource_type": "AWS::S3::Bucket",
       "title": "S3 bucket has no server access logging",
-      "description": "LoggingConfiguration is absent. Object-level access to the bucket cannot be reconstructed for audit or incident response.",
+      "description": "LoggingConfiguration is absent or names no DestinationBucketName (an empty block disables logging). Object-level access to the bucket cannot be reconstructed for audit or incident response.",
       "evidence": "DMS/DMSAuroraToS3FullLoadAndOngoingReplication.yaml:196 \u2014 Properties.LoggingConfiguration is absent",
       "evidence_file": "DMS/DMSAuroraToS3FullLoadAndOngoingReplication.yaml",
       "evidence_line": 196,
@@ -21836,7 +21837,7 @@
       "resource_type": "AWS::Lambda::Function",
       "title": "Lambda function is not attached to a VPC although the stack contains VPC data resources",
       "description": "The function has no VpcConfig while the same template defines a VPC, database, cache or file system. Traffic from the function does not pass through the VPC security controls.",
-      "evidence": "ElastiCache/Elasticache-snapshot.yaml:210 \u2014 VpcConfig is absent",
+      "evidence": "ElastiCache/Elasticache-snapshot.yaml:210 \u2014 Properties.VpcConfig is absent",
       "evidence_file": "ElastiCache/Elasticache-snapshot.yaml",
       "evidence_line": 210,
       "evidence_snippet": "DeletionPolicy: Delete",
@@ -22008,7 +22009,7 @@
       "resource_logical_id": "LogsBucket",
       "resource_type": "AWS::S3::Bucket",
       "title": "S3 bucket has no server access logging",
-      "description": "LoggingConfiguration is absent. Object-level access to the bucket cannot be reconstructed for audit or incident response.",
+      "description": "LoggingConfiguration is absent or names no DestinationBucketName (an empty block disables logging). Object-level access to the bucket cannot be reconstructed for audit or incident response.",
       "evidence": "ElasticLoadBalancing/ELB_Access_Logs_And_Connection_Draining.yaml:133 \u2014 Properties.LoggingConfiguration is absent",
       "evidence_file": "ElasticLoadBalancing/ELB_Access_Logs_And_Connection_Draining.yaml",
       "evidence_line": 133,
@@ -22095,7 +22096,7 @@
       "resource_type": "AWS::Lambda::Function",
       "title": "Lambda function is not attached to a VPC although the stack contains VPC data resources",
       "description": "The function has no VpcConfig while the same template defines a VPC, database, cache or file system. Traffic from the function does not pass through the VPC security controls.",
-      "evidence": "IoT/amzn2-greengrass-cfn-pkg.yaml:30 \u2014 VpcConfig is absent",
+      "evidence": "IoT/amzn2-greengrass-cfn-pkg.yaml:30 \u2014 Properties.VpcConfig is absent",
       "evidence_file": "IoT/amzn2-greengrass-cfn-pkg.yaml",
       "evidence_line": 30,
       "evidence_snippet": "Type: AWS::Lambda::Function",
@@ -22139,7 +22140,7 @@
       "resource_type": "AWS::Lambda::Function",
       "title": "Lambda function is not attached to a VPC although the stack contains VPC data resources",
       "description": "The function has no VpcConfig while the same template defines a VPC, database, cache or file system. Traffic from the function does not pass through the VPC security controls.",
-      "evidence": "IoT/amzn2-greengrass-cfn-pkg.yaml:75 \u2014 VpcConfig is absent",
+      "evidence": "IoT/amzn2-greengrass-cfn-pkg.yaml:75 \u2014 Properties.VpcConfig is absent",
       "evidence_file": "IoT/amzn2-greengrass-cfn-pkg.yaml",
       "evidence_line": 75,
       "evidence_snippet": "Type: AWS::Lambda::Function",
@@ -22183,7 +22184,7 @@
       "resource_type": "AWS::Lambda::Function",
       "title": "Lambda function is not attached to a VPC although the stack contains VPC data resources",
       "description": "The function has no VpcConfig while the same template defines a VPC, database, cache or file system. Traffic from the function does not pass through the VPC security controls.",
-      "evidence": "IoT/amzn2-greengrass-cfn-pkg.yaml:238 \u2014 VpcConfig is absent",
+      "evidence": "IoT/amzn2-greengrass-cfn-pkg.yaml:238 \u2014 Properties.VpcConfig is absent",
       "evidence_file": "IoT/amzn2-greengrass-cfn-pkg.yaml",
       "evidence_line": 238,
       "evidence_snippet": "Type: AWS::Lambda::Function",
@@ -22227,7 +22228,7 @@
       "resource_type": "AWS::Lambda::Function",
       "title": "Lambda function is not attached to a VPC although the stack contains VPC data resources",
       "description": "The function has no VpcConfig while the same template defines a VPC, database, cache or file system. Traffic from the function does not pass through the VPC security controls.",
-      "evidence": "IoT/amzn2-greengrass-cfn-pkg.yaml:381 \u2014 VpcConfig is absent",
+      "evidence": "IoT/amzn2-greengrass-cfn-pkg.yaml:381 \u2014 Properties.VpcConfig is absent",
       "evidence_file": "IoT/amzn2-greengrass-cfn-pkg.yaml",
       "evidence_line": 381,
       "evidence_snippet": "Type: AWS::Lambda::Function",
@@ -22271,7 +22272,7 @@
       "resource_type": "AWS::Lambda::Function",
       "title": "Lambda function is not attached to a VPC although the stack contains VPC data resources",
       "description": "The function has no VpcConfig while the same template defines a VPC, database, cache or file system. Traffic from the function does not pass through the VPC security controls.",
-      "evidence": "IoT/amzn2-greengrass-cfn.yaml:325 \u2014 VpcConfig is absent",
+      "evidence": "IoT/amzn2-greengrass-cfn.yaml:325 \u2014 Properties.VpcConfig is absent",
       "evidence_file": "IoT/amzn2-greengrass-cfn.yaml",
       "evidence_line": 325,
       "evidence_snippet": "Type: AWS::Lambda::Function",
@@ -22315,7 +22316,7 @@
       "resource_type": "AWS::Lambda::Function",
       "title": "Lambda function is not attached to a VPC although the stack contains VPC data resources",
       "description": "The function has no VpcConfig while the same template defines a VPC, database, cache or file system. Traffic from the function does not pass through the VPC security controls.",
-      "evidence": "IoT/amzn2-greengrass-cfn.yaml:166 \u2014 VpcConfig is absent",
+      "evidence": "IoT/amzn2-greengrass-cfn.yaml:166 \u2014 Properties.VpcConfig is absent",
       "evidence_file": "IoT/amzn2-greengrass-cfn.yaml",
       "evidence_line": 166,
       "evidence_snippet": "Type: AWS::Lambda::Function",
@@ -22359,7 +22360,7 @@
       "resource_type": "AWS::Lambda::Function",
       "title": "Lambda function is not attached to a VPC although the stack contains VPC data resources",
       "description": "The function has no VpcConfig while the same template defines a VPC, database, cache or file system. Traffic from the function does not pass through the VPC security controls.",
-      "evidence": "IoT/amzn2-greengrass-cfn.yaml:354 \u2014 VpcConfig is absent",
+      "evidence": "IoT/amzn2-greengrass-cfn.yaml:354 \u2014 Properties.VpcConfig is absent",
       "evidence_file": "IoT/amzn2-greengrass-cfn.yaml",
       "evidence_line": 354,
       "evidence_snippet": "Type: AWS::Lambda::Function",
@@ -22403,7 +22404,7 @@
       "resource_type": "AWS::Lambda::Function",
       "title": "Lambda function is not attached to a VPC although the stack contains VPC data resources",
       "description": "The function has no VpcConfig while the same template defines a VPC, database, cache or file system. Traffic from the function does not pass through the VPC security controls.",
-      "evidence": "IoT/amzn2-greengrass-cfn.yaml:380 \u2014 VpcConfig is absent",
+      "evidence": "IoT/amzn2-greengrass-cfn.yaml:380 \u2014 Properties.VpcConfig is absent",
       "evidence_file": "IoT/amzn2-greengrass-cfn.yaml",
       "evidence_line": 380,
       "evidence_snippet": "Type: AWS::Lambda::Function",
@@ -26276,7 +26277,7 @@
       "resource_logical_id": "ObjectStorageLogBucket",
       "resource_type": "AWS::S3::Bucket",
       "title": "S3 bucket has no server access logging",
-      "description": "LoggingConfiguration is absent. Object-level access to the bucket cannot be reconstructed for audit or incident response.",
+      "description": "LoggingConfiguration is absent or names no DestinationBucketName (an empty block disables logging). Object-level access to the bucket cannot be reconstructed for audit or incident response.",
       "evidence": "S3/compliant-bucket.yaml:75 \u2014 Properties.LoggingConfiguration is absent",
       "evidence_file": "S3/compliant-bucket.yaml",
       "evidence_line": 75,
@@ -26317,7 +26318,7 @@
       "resource_logical_id": "ObjectStorageReplicaBucket",
       "resource_type": "AWS::S3::Bucket",
       "title": "S3 bucket has no server access logging",
-      "description": "LoggingConfiguration is absent. Object-level access to the bucket cannot be reconstructed for audit or incident response.",
+      "description": "LoggingConfiguration is absent or names no DestinationBucketName (an empty block disables logging). Object-level access to the bucket cannot be reconstructed for audit or incident response.",
       "evidence": "S3/compliant-bucket.yaml:137 \u2014 Properties.LoggingConfiguration is absent",
       "evidence_file": "S3/compliant-bucket.yaml",
       "evidence_line": 137,
@@ -26358,7 +26359,7 @@
       "resource_logical_id": "CloudFrontLogsLogBucket",
       "resource_type": "AWS::S3::Bucket",
       "title": "S3 bucket has no server access logging",
-      "description": "LoggingConfiguration is absent. Object-level access to the bucket cannot be reconstructed for audit or incident response.",
+      "description": "LoggingConfiguration is absent or names no DestinationBucketName (an empty block disables logging). Object-level access to the bucket cannot be reconstructed for audit or incident response.",
       "evidence": "S3/compliant-static-website.yaml:77 \u2014 Properties.LoggingConfiguration is absent",
       "evidence_file": "S3/compliant-static-website.yaml",
       "evidence_line": 77,
@@ -26399,7 +26400,7 @@
       "resource_logical_id": "CloudFrontLogsReplicaBucket",
       "resource_type": "AWS::S3::Bucket",
       "title": "S3 bucket has no server access logging",
-      "description": "LoggingConfiguration is absent. Object-level access to the bucket cannot be reconstructed for audit or incident response.",
+      "description": "LoggingConfiguration is absent or names no DestinationBucketName (an empty block disables logging). Object-level access to the bucket cannot be reconstructed for audit or incident response.",
       "evidence": "S3/compliant-static-website.yaml:139 \u2014 Properties.LoggingConfiguration is absent",
       "evidence_file": "S3/compliant-static-website.yaml",
       "evidence_line": 139,
@@ -26440,7 +26441,7 @@
       "resource_logical_id": "ContentLogBucket",
       "resource_type": "AWS::S3::Bucket",
       "title": "S3 bucket has no server access logging",
-      "description": "LoggingConfiguration is absent. Object-level access to the bucket cannot be reconstructed for audit or incident response.",
+      "description": "LoggingConfiguration is absent or names no DestinationBucketName (an empty block disables logging). Object-level access to the bucket cannot be reconstructed for audit or incident response.",
       "evidence": "S3/compliant-static-website.yaml:294 \u2014 Properties.LoggingConfiguration is absent",
       "evidence_file": "S3/compliant-static-website.yaml",
       "evidence_line": 294,
@@ -26481,7 +26482,7 @@
       "resource_logical_id": "ContentReplicaBucket",
       "resource_type": "AWS::S3::Bucket",
       "title": "S3 bucket has no server access logging",
-      "description": "LoggingConfiguration is absent. Object-level access to the bucket cannot be reconstructed for audit or incident response.",
+      "description": "LoggingConfiguration is absent or names no DestinationBucketName (an empty block disables logging). Object-level access to the bucket cannot be reconstructed for audit or incident response.",
       "evidence": "S3/compliant-static-website.yaml:356 \u2014 Properties.LoggingConfiguration is absent",
       "evidence_file": "S3/compliant-static-website.yaml",
       "evidence_line": 356,
@@ -26645,7 +26646,7 @@
       "resource_logical_id": "SiteCloudFrontLogsLogBucket",
       "resource_type": "AWS::S3::Bucket",
       "title": "S3 bucket has no server access logging",
-      "description": "LoggingConfiguration is absent. Object-level access to the bucket cannot be reconstructed for audit or incident response.",
+      "description": "LoggingConfiguration is absent or names no DestinationBucketName (an empty block disables logging). Object-level access to the bucket cannot be reconstructed for audit or incident response.",
       "evidence": "Solutions/WebApp/webapp.yaml:363 \u2014 Properties.LoggingConfiguration is absent",
       "evidence_file": "Solutions/WebApp/webapp.yaml",
       "evidence_line": 363,
@@ -26686,7 +26687,7 @@
       "resource_logical_id": "SiteCloudFrontLogsReplicaBucket",
       "resource_type": "AWS::S3::Bucket",
       "title": "S3 bucket has no server access logging",
-      "description": "LoggingConfiguration is absent. Object-level access to the bucket cannot be reconstructed for audit or incident response.",
+      "description": "LoggingConfiguration is absent or names no DestinationBucketName (an empty block disables logging). Object-level access to the bucket cannot be reconstructed for audit or incident response.",
       "evidence": "Solutions/WebApp/webapp.yaml:428 \u2014 Properties.LoggingConfiguration is absent",
       "evidence_file": "Solutions/WebApp/webapp.yaml",
       "evidence_line": 428,
@@ -26727,7 +26728,7 @@
       "resource_logical_id": "SiteContentLogBucket",
       "resource_type": "AWS::S3::Bucket",
       "title": "S3 bucket has no server access logging",
-      "description": "LoggingConfiguration is absent. Object-level access to the bucket cannot be reconstructed for audit or incident response.",
+      "description": "LoggingConfiguration is absent or names no DestinationBucketName (an empty block disables logging). Object-level access to the bucket cannot be reconstructed for audit or incident response.",
       "evidence": "Solutions/WebApp/webapp.yaml:138 \u2014 Properties.LoggingConfiguration is absent",
       "evidence_file": "Solutions/WebApp/webapp.yaml",
       "evidence_line": 138,
@@ -26768,7 +26769,7 @@
       "resource_logical_id": "SiteContentReplicaBucket",
       "resource_type": "AWS::S3::Bucket",
       "title": "S3 bucket has no server access logging",
-      "description": "LoggingConfiguration is absent. Object-level access to the bucket cannot be reconstructed for audit or incident response.",
+      "description": "LoggingConfiguration is absent or names no DestinationBucketName (an empty block disables logging). Object-level access to the bucket cannot be reconstructed for audit or incident response.",
       "evidence": "Solutions/WebApp/webapp.yaml:200 \u2014 Properties.LoggingConfiguration is absent",
       "evidence_file": "Solutions/WebApp/webapp.yaml",
       "evidence_line": 200,
@@ -27342,7 +27343,7 @@
       "resource_logical_id": "StorageLogBucket",
       "resource_type": "AWS::S3::Bucket",
       "title": "S3 bucket has no server access logging",
-      "description": "LoggingConfiguration is absent. Object-level access to the bucket cannot be reconstructed for audit or incident response.",
+      "description": "LoggingConfiguration is absent or names no DestinationBucketName (an empty block disables logging). Object-level access to the bucket cannot be reconstructed for audit or incident response.",
       "evidence": "CloudFormation/StackSets/common-resources-pkg.json:17 \u2014 Properties.LoggingConfiguration is absent",
       "evidence_file": "CloudFormation/StackSets/common-resources-pkg.json",
       "evidence_line": 17,
@@ -27383,7 +27384,7 @@
       "resource_logical_id": "StorageReplicaBucket",
       "resource_type": "AWS::S3::Bucket",
       "title": "S3 bucket has no server access logging",
-      "description": "LoggingConfiguration is absent. Object-level access to the bucket cannot be reconstructed for audit or incident response.",
+      "description": "LoggingConfiguration is absent or names no DestinationBucketName (an empty block disables logging). Object-level access to the bucket cannot be reconstructed for audit or incident response.",
       "evidence": "CloudFormation/StackSets/common-resources-pkg.json:130 \u2014 Properties.LoggingConfiguration is absent",
       "evidence_file": "CloudFormation/StackSets/common-resources-pkg.json",
       "evidence_line": 130,
@@ -42517,6 +42518,45 @@
       ]
     },
     {
+      "finding_id": "CSA-LOG-001-F84C9C",
+      "template_path": "Solutions/VPCFlowLogs/templates/VPCFlowLogsS3.cfn.yaml",
+      "service_directory": "Solutions",
+      "resource_logical_id": "VPCFlowLogsBucket",
+      "resource_type": "AWS::S3::Bucket",
+      "title": "S3 bucket has no server access logging",
+      "description": "LoggingConfiguration is absent or names no DestinationBucketName (an empty block disables logging). Object-level access to the bucket cannot be reconstructed for audit or incident response.",
+      "evidence": "Solutions/VPCFlowLogs/templates/VPCFlowLogsS3.cfn.yaml:157 \u2014 Properties.LoggingConfiguration does not set DestinationBucketName in one Fn::If branch",
+      "evidence_file": "Solutions/VPCFlowLogs/templates/VPCFlowLogsS3.cfn.yaml",
+      "evidence_line": 157,
+      "evidence_snippet": "LoggingConfiguration: !If",
+      "severity": "CAT III",
+      "severity_justification": "Degrades protection measures or defense in depth (DISA CAT III).",
+      "nist_controls": [
+        "AU-2",
+        "AU-12"
+      ],
+      "cis_aws_v3_id": null,
+      "dod_cloud_srg_area": "Computer Network Defense and Incident Response \u2014 Continuous Monitoring; Mission Owner SRG SRG-OS-000342-CLD-000020 (centralized logging)",
+      "source": "custom",
+      "custom_rule_id": "CSA-LOG-001",
+      "checkov_ids": [],
+      "cfn_nag_ids": [],
+      "cfn_lint_ids": [],
+      "recommended_remediation": "Add LoggingConfiguration pointing at a dedicated, encrypted log bucket, or enable CloudTrail data events for the bucket.",
+      "disposition": "Open",
+      "disposition_note": "",
+      "owner": "Security Operations / ISSO",
+      "target_date": "TBD \u2014 CAT III: 180 days from Government acceptance of this report",
+      "tags": [],
+      "risk_score": 108,
+      "risk_rank": 969,
+      "hit_key": "",
+      "tool_rule_id": "CSA-LOG-001",
+      "nist_control_families": [
+        "Audit and Accountability"
+      ]
+    },
+    {
       "finding_id": "CSA-IAM-006-AFB636",
       "template_path": "Solutions/VPCPeering/templates/VPCPeering-Accepter-Role.cfn.yaml",
       "service_directory": "Solutions",
@@ -42548,7 +42588,7 @@
       "target_date": "TBD \u2014 CAT III: 180 days from Government acceptance of this report",
       "tags": [],
       "risk_score": 108,
-      "risk_rank": 969,
+      "risk_rank": 970,
       "hit_key": "",
       "tool_rule_id": "CSA-IAM-006",
       "nist_control_families": [
@@ -42589,7 +42629,7 @@
       "target_date": "TBD \u2014 CAT III: 180 days from Government acceptance of this report",
       "tags": [],
       "risk_score": 108,
-      "risk_rank": 970,
+      "risk_rank": 971,
       "hit_key": "",
       "tool_rule_id": "CSA-IAM-007",
       "nist_control_families": [
@@ -42629,7 +42669,7 @@
       "target_date": "TBD \u2014 CAT III: 180 days from Government acceptance of this report",
       "tags": [],
       "risk_score": 108,
-      "risk_rank": 971,
+      "risk_rank": 972,
       "hit_key": "",
       "tool_rule_id": "CSA-MON-001",
       "nist_control_families": [
@@ -42669,7 +42709,7 @@
       "target_date": "TBD \u2014 CAT III: 180 days from Government acceptance of this report",
       "tags": [],
       "risk_score": 108,
-      "risk_rank": 972,
+      "risk_rank": 973,
       "hit_key": "",
       "tool_rule_id": "CSA-IAM-006",
       "nist_control_families": [
@@ -42710,7 +42750,7 @@
       "target_date": "TBD \u2014 CAT III: 180 days from Government acceptance of this report",
       "tags": [],
       "risk_score": 108,
-      "risk_rank": 973,
+      "risk_rank": 974,
       "hit_key": "",
       "tool_rule_id": "CSA-IAM-007",
       "nist_control_families": [
@@ -42751,7 +42791,7 @@
       "target_date": "TBD \u2014 CAT III: 180 days from Government acceptance of this report",
       "tags": [],
       "risk_score": 108,
-      "risk_rank": 974,
+      "risk_rank": 975,
       "hit_key": "",
       "tool_rule_id": "CSA-IAM-007",
       "nist_control_families": [
@@ -42792,7 +42832,7 @@
       "target_date": "TBD \u2014 CAT III: 180 days from Government acceptance of this report",
       "tags": [],
       "risk_score": 108,
-      "risk_rank": 975,
+      "risk_rank": 976,
       "hit_key": "",
       "tool_rule_id": "CSA-IAM-007",
       "nist_control_families": [
@@ -42832,7 +42872,7 @@
       "target_date": "TBD \u2014 CAT III: 180 days from Government acceptance of this report",
       "tags": [],
       "risk_score": 108,
-      "risk_rank": 976,
+      "risk_rank": 977,
       "hit_key": "",
       "tool_rule_id": "CSA-MON-001",
       "nist_control_families": [
@@ -42873,7 +42913,7 @@
       "target_date": "TBD \u2014 CAT III: 180 days from Government acceptance of this report",
       "tags": [],
       "risk_score": 108,
-      "risk_rank": 977,
+      "risk_rank": 978,
       "hit_key": "",
       "tool_rule_id": "CSA-IAM-007",
       "nist_control_families": [
@@ -42913,7 +42953,7 @@
       "target_date": "TBD \u2014 CAT III: 180 days from Government acceptance of this report",
       "tags": [],
       "risk_score": 108,
-      "risk_rank": 978,
+      "risk_rank": 979,
       "hit_key": "",
       "tool_rule_id": "CSA-BKP-002",
       "nist_control_families": [
@@ -42953,7 +42993,7 @@
       "target_date": "TBD \u2014 CAT III: 180 days from Government acceptance of this report",
       "tags": [],
       "risk_score": 108,
-      "risk_rank": 979,
+      "risk_rank": 980,
       "hit_key": "",
       "tool_rule_id": "CSA-BKP-002",
       "nist_control_families": [
@@ -42993,7 +43033,7 @@
       "target_date": "TBD \u2014 CAT III: 180 days from Government acceptance of this report",
       "tags": [],
       "risk_score": 108,
-      "risk_rank": 980,
+      "risk_rank": 981,
       "hit_key": "",
       "tool_rule_id": "CSA-BKP-002",
       "nist_control_families": [
@@ -43034,7 +43074,7 @@
       "target_date": "TBD \u2014 CAT III: 180 days from Government acceptance of this report",
       "tags": [],
       "risk_score": 108,
-      "risk_rank": 981,
+      "risk_rank": 982,
       "hit_key": "",
       "tool_rule_id": "CSA-IAM-007",
       "nist_control_families": [
@@ -43074,7 +43114,7 @@
       "target_date": "TBD \u2014 CAT III: 180 days from Government acceptance of this report",
       "tags": [],
       "risk_score": 108,
-      "risk_rank": 982,
+      "risk_rank": 983,
       "hit_key": "",
       "tool_rule_id": "CSA-BKP-002",
       "nist_control_families": [
@@ -43114,7 +43154,7 @@
       "target_date": "TBD \u2014 CAT III: 180 days from Government acceptance of this report",
       "tags": [],
       "risk_score": 108,
-      "risk_rank": 983,
+      "risk_rank": 984,
       "hit_key": "",
       "tool_rule_id": "CSA-BKP-002",
       "nist_control_families": [
@@ -43154,7 +43194,7 @@
       "target_date": "TBD \u2014 CAT III: 180 days from Government acceptance of this report",
       "tags": [],
       "risk_score": 108,
-      "risk_rank": 984,
+      "risk_rank": 985,
       "hit_key": "",
       "tool_rule_id": "CSA-BKP-002",
       "nist_control_families": [
@@ -43195,7 +43235,7 @@
       "target_date": "TBD \u2014 CAT III: 180 days from Government acceptance of this report",
       "tags": [],
       "risk_score": 108,
-      "risk_rank": 985,
+      "risk_rank": 986,
       "hit_key": "",
       "tool_rule_id": "CSA-IAM-007",
       "nist_control_families": [
@@ -43235,7 +43275,7 @@
       "target_date": "TBD \u2014 CAT III: 180 days from Government acceptance of this report",
       "tags": [],
       "risk_score": 108,
-      "risk_rank": 986,
+      "risk_rank": 987,
       "hit_key": "",
       "tool_rule_id": "CSA-MON-001",
       "nist_control_families": [
@@ -43276,7 +43316,7 @@
       "target_date": "TBD \u2014 CAT III: 180 days from Government acceptance of this report",
       "tags": [],
       "risk_score": 108,
-      "risk_rank": 987,
+      "risk_rank": 988,
       "hit_key": "",
       "tool_rule_id": "CSA-IAM-007",
       "nist_control_families": [
@@ -43316,7 +43356,7 @@
       "target_date": "TBD \u2014 CAT III: 180 days from Government acceptance of this report",
       "tags": [],
       "risk_score": 108,
-      "risk_rank": 988,
+      "risk_rank": 989,
       "hit_key": "",
       "tool_rule_id": "CSA-BKP-002",
       "nist_control_families": [
@@ -43356,7 +43396,7 @@
       "target_date": "TBD \u2014 CAT III: 180 days from Government acceptance of this report",
       "tags": [],
       "risk_score": 105,
-      "risk_rank": 989,
+      "risk_rank": 990,
       "hit_key": "",
       "tool_rule_id": "CSA-MON-001",
       "nist_control_families": [
@@ -43396,7 +43436,7 @@
       "target_date": "TBD \u2014 CAT III: 180 days from Government acceptance of this report",
       "tags": [],
       "risk_score": 105,
-      "risk_rank": 990,
+      "risk_rank": 991,
       "hit_key": "",
       "tool_rule_id": "CSA-IAM-006",
       "nist_control_families": [
@@ -43437,7 +43477,7 @@
       "target_date": "TBD \u2014 CAT III: 180 days from Government acceptance of this report",
       "tags": [],
       "risk_score": 105,
-      "risk_rank": 991,
+      "risk_rank": 992,
       "hit_key": "",
       "tool_rule_id": "CSA-IAM-007",
       "nist_control_families": [
@@ -43478,7 +43518,7 @@
       "target_date": "TBD \u2014 CAT III: 180 days from Government acceptance of this report",
       "tags": [],
       "risk_score": 105,
-      "risk_rank": 992,
+      "risk_rank": 993,
       "hit_key": "",
       "tool_rule_id": "CSA-CFG-002",
       "nist_control_families": [
@@ -43517,7 +43557,7 @@
       "target_date": "TBD \u2014 CAT III: 180 days from Government acceptance of this report",
       "tags": [],
       "risk_score": 105,
-      "risk_rank": 993,
+      "risk_rank": 994,
       "hit_key": "",
       "tool_rule_id": "CSA-MON-001",
       "nist_control_families": [
@@ -43557,7 +43597,7 @@
       "target_date": "TBD \u2014 CAT III: 180 days from Government acceptance of this report",
       "tags": [],
       "risk_score": 105,
-      "risk_rank": 994,
+      "risk_rank": 995,
       "hit_key": "",
       "tool_rule_id": "CSA-IAM-006",
       "nist_control_families": [
@@ -43598,7 +43638,7 @@
       "target_date": "TBD \u2014 CAT III: 180 days from Government acceptance of this report",
       "tags": [],
       "risk_score": 105,
-      "risk_rank": 995,
+      "risk_rank": 996,
       "hit_key": "",
       "tool_rule_id": "CSA-IAM-007",
       "nist_control_families": [
@@ -43639,7 +43679,7 @@
       "target_date": "TBD \u2014 CAT III: 180 days from Government acceptance of this report",
       "tags": [],
       "risk_score": 105,
-      "risk_rank": 996,
+      "risk_rank": 997,
       "hit_key": "",
       "tool_rule_id": "CSA-CFG-002",
       "nist_control_families": [
@@ -43678,7 +43718,7 @@
       "target_date": "TBD \u2014 CAT III: 180 days from Government acceptance of this report",
       "tags": [],
       "risk_score": 105,
-      "risk_rank": 997,
+      "risk_rank": 998,
       "hit_key": "",
       "tool_rule_id": "CSA-MON-001",
       "nist_control_families": [
@@ -43718,7 +43758,7 @@
       "target_date": "TBD \u2014 CAT III: 180 days from Government acceptance of this report",
       "tags": [],
       "risk_score": 105,
-      "risk_rank": 998,
+      "risk_rank": 999,
       "hit_key": "",
       "tool_rule_id": "CSA-IAM-006",
       "nist_control_families": [
@@ -43759,7 +43799,7 @@
       "target_date": "TBD \u2014 CAT III: 180 days from Government acceptance of this report",
       "tags": [],
       "risk_score": 105,
-      "risk_rank": 999,
+      "risk_rank": 1000,
       "hit_key": "",
       "tool_rule_id": "CSA-IAM-007",
       "nist_control_families": [
@@ -43799,7 +43839,7 @@
       "target_date": "TBD \u2014 CAT III: 180 days from Government acceptance of this report",
       "tags": [],
       "risk_score": 105,
-      "risk_rank": 1000,
+      "risk_rank": 1001,
       "hit_key": "",
       "tool_rule_id": "CSA-IAM-006",
       "nist_control_families": [
@@ -43840,7 +43880,7 @@
       "target_date": "TBD \u2014 CAT III: 180 days from Government acceptance of this report",
       "tags": [],
       "risk_score": 105,
-      "risk_rank": 1001,
+      "risk_rank": 1002,
       "hit_key": "",
       "tool_rule_id": "CSA-IAM-007",
       "nist_control_families": [
@@ -43881,7 +43921,7 @@
       "target_date": "TBD \u2014 CAT III: 180 days from Government acceptance of this report",
       "tags": [],
       "risk_score": 105,
-      "risk_rank": 1002,
+      "risk_rank": 1003,
       "hit_key": "",
       "tool_rule_id": "CSA-CFG-002",
       "nist_control_families": [
@@ -43920,7 +43960,7 @@
       "target_date": "TBD \u2014 CAT III: 180 days from Government acceptance of this report",
       "tags": [],
       "risk_score": 105,
-      "risk_rank": 1003,
+      "risk_rank": 1004,
       "hit_key": "",
       "tool_rule_id": "CSA-IAM-006",
       "nist_control_families": [
@@ -43961,7 +44001,7 @@
       "target_date": "TBD \u2014 CAT III: 180 days from Government acceptance of this report",
       "tags": [],
       "risk_score": 105,
-      "risk_rank": 1004,
+      "risk_rank": 1005,
       "hit_key": "",
       "tool_rule_id": "CSA-IAM-007",
       "nist_control_families": [
@@ -44002,7 +44042,7 @@
       "target_date": "TBD \u2014 CAT III: 180 days from Government acceptance of this report",
       "tags": [],
       "risk_score": 105,
-      "risk_rank": 1005,
+      "risk_rank": 1006,
       "hit_key": "",
       "tool_rule_id": "CSA-CFG-002",
       "nist_control_families": [
@@ -44041,7 +44081,7 @@
       "target_date": "TBD \u2014 CAT III: 180 days from Government acceptance of this report",
       "tags": [],
       "risk_score": 105,
-      "risk_rank": 1006,
+      "risk_rank": 1007,
       "hit_key": "",
       "tool_rule_id": "CSA-MON-001",
       "nist_control_families": [
@@ -44081,7 +44121,7 @@
       "target_date": "TBD \u2014 CAT III: 180 days from Government acceptance of this report",
       "tags": [],
       "risk_score": 105,
-      "risk_rank": 1007,
+      "risk_rank": 1008,
       "hit_key": "",
       "tool_rule_id": "CSA-IAM-006",
       "nist_control_families": [
@@ -44122,7 +44162,7 @@
       "target_date": "TBD \u2014 CAT III: 180 days from Government acceptance of this report",
       "tags": [],
       "risk_score": 105,
-      "risk_rank": 1008,
+      "risk_rank": 1009,
       "hit_key": "",
       "tool_rule_id": "CSA-IAM-007",
       "nist_control_families": [
@@ -44162,7 +44202,7 @@
       "target_date": "TBD \u2014 CAT III: 180 days from Government acceptance of this report",
       "tags": [],
       "risk_score": 105,
-      "risk_rank": 1009,
+      "risk_rank": 1010,
       "hit_key": "",
       "tool_rule_id": "CSA-MON-001",
       "nist_control_families": [
@@ -44202,7 +44242,7 @@
       "target_date": "TBD \u2014 CAT III: 180 days from Government acceptance of this report",
       "tags": [],
       "risk_score": 105,
-      "risk_rank": 1010,
+      "risk_rank": 1011,
       "hit_key": "",
       "tool_rule_id": "CSA-MON-001",
       "nist_control_families": [
@@ -44242,7 +44282,7 @@
       "target_date": "TBD \u2014 CAT III: 180 days from Government acceptance of this report",
       "tags": [],
       "risk_score": 105,
-      "risk_rank": 1011,
+      "risk_rank": 1012,
       "hit_key": "",
       "tool_rule_id": "CSA-MON-001",
       "nist_control_families": [
@@ -44282,7 +44322,7 @@
       "target_date": "TBD \u2014 CAT III: 180 days from Government acceptance of this report",
       "tags": [],
       "risk_score": 105,
-      "risk_rank": 1012,
+      "risk_rank": 1013,
       "hit_key": "",
       "tool_rule_id": "CSA-MON-001",
       "nist_control_families": [
@@ -44322,7 +44362,7 @@
       "target_date": "TBD \u2014 CAT III: 180 days from Government acceptance of this report",
       "tags": [],
       "risk_score": 105,
-      "risk_rank": 1013,
+      "risk_rank": 1014,
       "hit_key": "",
       "tool_rule_id": "CSA-BKP-002",
       "nist_control_families": [
@@ -44362,7 +44402,7 @@
       "target_date": "TBD \u2014 CAT III: 180 days from Government acceptance of this report",
       "tags": [],
       "risk_score": 105,
-      "risk_rank": 1014,
+      "risk_rank": 1015,
       "hit_key": "",
       "tool_rule_id": "CSA-BKP-002",
       "nist_control_families": [
@@ -44402,7 +44442,7 @@
       "target_date": "TBD \u2014 CAT III: 180 days from Government acceptance of this report",
       "tags": [],
       "risk_score": 105,
-      "risk_rank": 1015,
+      "risk_rank": 1016,
       "hit_key": "",
       "tool_rule_id": "CSA-BKP-002",
       "nist_control_families": [
@@ -44442,7 +44482,7 @@
       "target_date": "TBD \u2014 CAT III: 180 days from Government acceptance of this report",
       "tags": [],
       "risk_score": 105,
-      "risk_rank": 1016,
+      "risk_rank": 1017,
       "hit_key": "",
       "tool_rule_id": "CSA-BKP-002",
       "nist_control_families": [
@@ -44482,7 +44522,7 @@
       "target_date": "TBD \u2014 CAT III: 180 days from Government acceptance of this report",
       "tags": [],
       "risk_score": 105,
-      "risk_rank": 1017,
+      "risk_rank": 1018,
       "hit_key": "",
       "tool_rule_id": "CSA-IAM-006",
       "nist_control_families": [
@@ -44523,7 +44563,7 @@
       "target_date": "TBD \u2014 CAT III: 180 days from Government acceptance of this report",
       "tags": [],
       "risk_score": 105,
-      "risk_rank": 1018,
+      "risk_rank": 1019,
       "hit_key": "",
       "tool_rule_id": "CSA-IAM-007",
       "nist_control_families": [
@@ -44563,7 +44603,7 @@
       "target_date": "TBD \u2014 CAT III: 180 days from Government acceptance of this report",
       "tags": [],
       "risk_score": 105,
-      "risk_rank": 1019,
+      "risk_rank": 1020,
       "hit_key": "",
       "tool_rule_id": "CSA-MON-001",
       "nist_control_families": [
@@ -44603,7 +44643,7 @@
       "target_date": "TBD \u2014 CAT III: 180 days from Government acceptance of this report",
       "tags": [],
       "risk_score": 105,
-      "risk_rank": 1020,
+      "risk_rank": 1021,
       "hit_key": "",
       "tool_rule_id": "CSA-BKP-002",
       "nist_control_families": [
@@ -44643,7 +44683,7 @@
       "target_date": "TBD \u2014 CAT III: 180 days from Government acceptance of this report",
       "tags": [],
       "risk_score": 105,
-      "risk_rank": 1021,
+      "risk_rank": 1022,
       "hit_key": "",
       "tool_rule_id": "CSA-MON-001",
       "nist_control_families": [
@@ -44683,7 +44723,7 @@
       "target_date": "TBD \u2014 CAT III: 180 days from Government acceptance of this report",
       "tags": [],
       "risk_score": 105,
-      "risk_rank": 1022,
+      "risk_rank": 1023,
       "hit_key": "",
       "tool_rule_id": "CSA-BKP-002",
       "nist_control_families": [
@@ -44723,7 +44763,7 @@
       "target_date": "TBD \u2014 CAT III: 180 days from Government acceptance of this report",
       "tags": [],
       "risk_score": 105,
-      "risk_rank": 1023,
+      "risk_rank": 1024,
       "hit_key": "",
       "tool_rule_id": "CSA-MON-001",
       "nist_control_families": [
@@ -44763,7 +44803,7 @@
       "target_date": "TBD \u2014 CAT III: 180 days from Government acceptance of this report",
       "tags": [],
       "risk_score": 105,
-      "risk_rank": 1024,
+      "risk_rank": 1025,
       "hit_key": "",
       "tool_rule_id": "CSA-MON-001",
       "nist_control_families": [
@@ -44803,7 +44843,7 @@
       "target_date": "TBD \u2014 CAT III: 180 days from Government acceptance of this report",
       "tags": [],
       "risk_score": 105,
-      "risk_rank": 1025,
+      "risk_rank": 1026,
       "hit_key": "",
       "tool_rule_id": "CSA-BKP-002",
       "nist_control_families": [
@@ -44843,7 +44883,7 @@
       "target_date": "TBD \u2014 CAT III: 180 days from Government acceptance of this report",
       "tags": [],
       "risk_score": 105,
-      "risk_rank": 1026,
+      "risk_rank": 1027,
       "hit_key": "",
       "tool_rule_id": "CSA-BKP-002",
       "nist_control_families": [
@@ -44883,7 +44923,7 @@
       "target_date": "TBD \u2014 CAT III: 180 days from Government acceptance of this report",
       "tags": [],
       "risk_score": 105,
-      "risk_rank": 1027,
+      "risk_rank": 1028,
       "hit_key": "",
       "tool_rule_id": "CSA-IAM-006",
       "nist_control_families": [
@@ -44924,7 +44964,7 @@
       "target_date": "TBD \u2014 CAT III: 180 days from Government acceptance of this report",
       "tags": [],
       "risk_score": 105,
-      "risk_rank": 1028,
+      "risk_rank": 1029,
       "hit_key": "",
       "tool_rule_id": "CSA-IAM-007",
       "nist_control_families": [
@@ -44964,7 +45004,7 @@
       "target_date": "TBD \u2014 CAT III: 180 days from Government acceptance of this report",
       "tags": [],
       "risk_score": 105,
-      "risk_rank": 1029,
+      "risk_rank": 1030,
       "hit_key": "",
       "tool_rule_id": "CSA-MON-001",
       "nist_control_families": [
@@ -45004,7 +45044,7 @@
       "target_date": "TBD \u2014 CAT III: 180 days from Government acceptance of this report",
       "tags": [],
       "risk_score": 105,
-      "risk_rank": 1030,
+      "risk_rank": 1031,
       "hit_key": "",
       "tool_rule_id": "CSA-BKP-002",
       "nist_control_families": [
@@ -45044,7 +45084,7 @@
       "target_date": "TBD \u2014 CAT III: 180 days from Government acceptance of this report",
       "tags": [],
       "risk_score": 105,
-      "risk_rank": 1031,
+      "risk_rank": 1032,
       "hit_key": "",
       "tool_rule_id": "CSA-BKP-002",
       "nist_control_families": [
@@ -45084,7 +45124,7 @@
       "target_date": "TBD \u2014 CAT III: 180 days from Government acceptance of this report",
       "tags": [],
       "risk_score": 105,
-      "risk_rank": 1032,
+      "risk_rank": 1033,
       "hit_key": "",
       "tool_rule_id": "CSA-MON-001",
       "nist_control_families": [
@@ -45124,7 +45164,7 @@
       "target_date": "TBD \u2014 CAT III: 180 days from Government acceptance of this report",
       "tags": [],
       "risk_score": 105,
-      "risk_rank": 1033,
+      "risk_rank": 1034,
       "hit_key": "",
       "tool_rule_id": "CSA-MON-001",
       "nist_control_families": [
@@ -45164,7 +45204,7 @@
       "target_date": "TBD \u2014 CAT III: 180 days from Government acceptance of this report",
       "tags": [],
       "risk_score": 105,
-      "risk_rank": 1034,
+      "risk_rank": 1035,
       "hit_key": "",
       "tool_rule_id": "CSA-BKP-002",
       "nist_control_families": [
@@ -45204,7 +45244,7 @@
       "target_date": "TBD \u2014 CAT III: 180 days from Government acceptance of this report",
       "tags": [],
       "risk_score": 105,
-      "risk_rank": 1035,
+      "risk_rank": 1036,
       "hit_key": "",
       "tool_rule_id": "CSA-MON-001",
       "nist_control_families": [
@@ -45244,7 +45284,7 @@
       "target_date": "TBD \u2014 CAT III: 180 days from Government acceptance of this report",
       "tags": [],
       "risk_score": 105,
-      "risk_rank": 1036,
+      "risk_rank": 1037,
       "hit_key": "",
       "tool_rule_id": "CSA-MON-001",
       "nist_control_families": [
@@ -45284,7 +45324,7 @@
       "target_date": "TBD \u2014 CAT III: 180 days from Government acceptance of this report",
       "tags": [],
       "risk_score": 105,
-      "risk_rank": 1037,
+      "risk_rank": 1038,
       "hit_key": "",
       "tool_rule_id": "CSA-IAM-006",
       "nist_control_families": [
@@ -45325,7 +45365,7 @@
       "target_date": "TBD \u2014 CAT III: 180 days from Government acceptance of this report",
       "tags": [],
       "risk_score": 105,
-      "risk_rank": 1038,
+      "risk_rank": 1039,
       "hit_key": "",
       "tool_rule_id": "CSA-IAM-007",
       "nist_control_families": [
@@ -45365,7 +45405,7 @@
       "target_date": "TBD \u2014 CAT III: 180 days from Government acceptance of this report",
       "tags": [],
       "risk_score": 105,
-      "risk_rank": 1039,
+      "risk_rank": 1040,
       "hit_key": "",
       "tool_rule_id": "CSA-MON-001",
       "nist_control_families": [
@@ -45405,7 +45445,7 @@
       "target_date": "TBD \u2014 CAT III: 180 days from Government acceptance of this report",
       "tags": [],
       "risk_score": 105,
-      "risk_rank": 1040,
+      "risk_rank": 1041,
       "hit_key": "",
       "tool_rule_id": "CSA-BKP-002",
       "nist_control_families": [
@@ -45445,7 +45485,7 @@
       "target_date": "TBD \u2014 CAT III: 180 days from Government acceptance of this report",
       "tags": [],
       "risk_score": 105,
-      "risk_rank": 1041,
+      "risk_rank": 1042,
       "hit_key": "",
       "tool_rule_id": "CSA-IAM-006",
       "nist_control_families": [
@@ -45486,7 +45526,7 @@
       "target_date": "TBD \u2014 CAT III: 180 days from Government acceptance of this report",
       "tags": [],
       "risk_score": 105,
-      "risk_rank": 1042,
+      "risk_rank": 1043,
       "hit_key": "",
       "tool_rule_id": "CSA-IAM-007",
       "nist_control_families": [
@@ -45526,7 +45566,7 @@
       "target_date": "TBD \u2014 CAT III: 180 days from Government acceptance of this report",
       "tags": [],
       "risk_score": 105,
-      "risk_rank": 1043,
+      "risk_rank": 1044,
       "hit_key": "",
       "tool_rule_id": "CSA-IAM-006",
       "nist_control_families": [
@@ -45567,7 +45607,7 @@
       "target_date": "TBD \u2014 CAT III: 180 days from Government acceptance of this report",
       "tags": [],
       "risk_score": 105,
-      "risk_rank": 1044,
+      "risk_rank": 1045,
       "hit_key": "",
       "tool_rule_id": "CSA-IAM-007",
       "nist_control_families": [
@@ -45607,7 +45647,7 @@
       "target_date": "TBD \u2014 CAT III: 180 days from Government acceptance of this report",
       "tags": [],
       "risk_score": 105,
-      "risk_rank": 1045,
+      "risk_rank": 1046,
       "hit_key": "",
       "tool_rule_id": "CSA-BKP-002",
       "nist_control_families": [
@@ -45647,7 +45687,7 @@
       "target_date": "TBD \u2014 CAT III: 180 days from Government acceptance of this report",
       "tags": [],
       "risk_score": 105,
-      "risk_rank": 1046,
+      "risk_rank": 1047,
       "hit_key": "",
       "tool_rule_id": "CSA-BKP-002",
       "nist_control_families": [
@@ -45687,7 +45727,7 @@
       "target_date": "TBD \u2014 CAT III: 180 days from Government acceptance of this report",
       "tags": [],
       "risk_score": 105,
-      "risk_rank": 1047,
+      "risk_rank": 1048,
       "hit_key": "",
       "tool_rule_id": "CSA-BKP-002",
       "nist_control_families": [
@@ -45728,7 +45768,7 @@
       "target_date": "TBD \u2014 CAT III: 180 days from Government acceptance of this report",
       "tags": [],
       "risk_score": 105,
-      "risk_rank": 1048,
+      "risk_rank": 1049,
       "hit_key": "",
       "tool_rule_id": "CSA-IAM-007",
       "nist_control_families": [
@@ -45769,7 +45809,7 @@
       "target_date": "TBD \u2014 CAT III: 180 days from Government acceptance of this report",
       "tags": [],
       "risk_score": 105,
-      "risk_rank": 1049,
+      "risk_rank": 1050,
       "hit_key": "",
       "tool_rule_id": "CSA-IAM-007",
       "nist_control_families": [
@@ -45809,7 +45849,7 @@
       "target_date": "TBD \u2014 CAT III: 180 days from Government acceptance of this report",
       "tags": [],
       "risk_score": 105,
-      "risk_rank": 1050,
+      "risk_rank": 1051,
       "hit_key": "",
       "tool_rule_id": "CSA-BKP-001",
       "nist_control_families": [
@@ -45848,7 +45888,7 @@
       "target_date": "TBD \u2014 CAT III: 180 days from Government acceptance of this report",
       "tags": [],
       "risk_score": 105,
-      "risk_rank": 1051,
+      "risk_rank": 1052,
       "hit_key": "",
       "tool_rule_id": "CSA-BKP-002",
       "nist_control_families": [
@@ -45888,7 +45928,7 @@
       "target_date": "TBD \u2014 CAT III: 180 days from Government acceptance of this report",
       "tags": [],
       "risk_score": 105,
-      "risk_rank": 1052,
+      "risk_rank": 1053,
       "hit_key": "",
       "tool_rule_id": "CSA-BKP-001",
       "nist_control_families": [
@@ -45927,7 +45967,7 @@
       "target_date": "TBD \u2014 CAT III: 180 days from Government acceptance of this report",
       "tags": [],
       "risk_score": 105,
-      "risk_rank": 1053,
+      "risk_rank": 1054,
       "hit_key": "",
       "tool_rule_id": "CSA-BKP-002",
       "nist_control_families": [
@@ -45967,7 +46007,7 @@
       "target_date": "TBD \u2014 CAT III: 180 days from Government acceptance of this report",
       "tags": [],
       "risk_score": 105,
-      "risk_rank": 1054,
+      "risk_rank": 1055,
       "hit_key": "",
       "tool_rule_id": "CSA-BKP-001",
       "nist_control_families": [
@@ -46006,7 +46046,7 @@
       "target_date": "TBD \u2014 CAT III: 180 days from Government acceptance of this report",
       "tags": [],
       "risk_score": 105,
-      "risk_rank": 1055,
+      "risk_rank": 1056,
       "hit_key": "",
       "tool_rule_id": "CSA-BKP-002",
       "nist_control_families": [
@@ -46046,7 +46086,7 @@
       "target_date": "TBD \u2014 CAT III: 180 days from Government acceptance of this report",
       "tags": [],
       "risk_score": 105,
-      "risk_rank": 1056,
+      "risk_rank": 1057,
       "hit_key": "",
       "tool_rule_id": "CSA-BKP-001",
       "nist_control_families": [
@@ -46085,7 +46125,7 @@
       "target_date": "TBD \u2014 CAT III: 180 days from Government acceptance of this report",
       "tags": [],
       "risk_score": 105,
-      "risk_rank": 1057,
+      "risk_rank": 1058,
       "hit_key": "",
       "tool_rule_id": "CSA-BKP-002",
       "nist_control_families": [
@@ -46125,7 +46165,7 @@
       "target_date": "TBD \u2014 CAT III: 180 days from Government acceptance of this report",
       "tags": [],
       "risk_score": 105,
-      "risk_rank": 1058,
+      "risk_rank": 1059,
       "hit_key": "",
       "tool_rule_id": "CSA-BKP-001",
       "nist_control_families": [
@@ -46139,7 +46179,7 @@
       "resource_logical_id": "S3BucketA",
       "resource_type": "AWS::S3::Bucket",
       "title": "S3 bucket has no server access logging",
-      "description": "LoggingConfiguration is absent. Object-level access to the bucket cannot be reconstructed for audit or incident response.",
+      "description": "LoggingConfiguration is absent or names no DestinationBucketName (an empty block disables logging). Object-level access to the bucket cannot be reconstructed for audit or incident response.",
       "evidence": "CloudFormation/fn-foreach-s3-outputs.yaml:14 \u2014 Properties.LoggingConfiguration is absent",
       "evidence_file": "CloudFormation/fn-foreach-s3-outputs.yaml",
       "evidence_line": 14,
@@ -46164,7 +46204,7 @@
       "target_date": "TBD \u2014 CAT III: 180 days from Government acceptance of this report",
       "tags": [],
       "risk_score": 105,
-      "risk_rank": 1059,
+      "risk_rank": 1060,
       "hit_key": "",
       "tool_rule_id": "CSA-LOG-001",
       "nist_control_families": [
@@ -46203,7 +46243,7 @@
       "target_date": "TBD \u2014 CAT III: 180 days from Government acceptance of this report",
       "tags": [],
       "risk_score": 105,
-      "risk_rank": 1060,
+      "risk_rank": 1061,
       "hit_key": "",
       "tool_rule_id": "CSA-BKP-001",
       "nist_control_families": [
@@ -46217,7 +46257,7 @@
       "resource_logical_id": "S3BucketB",
       "resource_type": "AWS::S3::Bucket",
       "title": "S3 bucket has no server access logging",
-      "description": "LoggingConfiguration is absent. Object-level access to the bucket cannot be reconstructed for audit or incident response.",
+      "description": "LoggingConfiguration is absent or names no DestinationBucketName (an empty block disables logging). Object-level access to the bucket cannot be reconstructed for audit or incident response.",
       "evidence": "CloudFormation/fn-foreach-s3-outputs.yaml:14 \u2014 Properties.LoggingConfiguration is absent",
       "evidence_file": "CloudFormation/fn-foreach-s3-outputs.yaml",
       "evidence_line": 14,
@@ -46242,7 +46282,7 @@
       "target_date": "TBD \u2014 CAT III: 180 days from Government acceptance of this report",
       "tags": [],
       "risk_score": 105,
-      "risk_rank": 1061,
+      "risk_rank": 1062,
       "hit_key": "",
       "tool_rule_id": "CSA-LOG-001",
       "nist_control_families": [
@@ -46281,7 +46321,7 @@
       "target_date": "TBD \u2014 CAT III: 180 days from Government acceptance of this report",
       "tags": [],
       "risk_score": 105,
-      "risk_rank": 1062,
+      "risk_rank": 1063,
       "hit_key": "",
       "tool_rule_id": "CSA-BKP-001",
       "nist_control_families": [
@@ -46295,7 +46335,7 @@
       "resource_logical_id": "S3BucketC",
       "resource_type": "AWS::S3::Bucket",
       "title": "S3 bucket has no server access logging",
-      "description": "LoggingConfiguration is absent. Object-level access to the bucket cannot be reconstructed for audit or incident response.",
+      "description": "LoggingConfiguration is absent or names no DestinationBucketName (an empty block disables logging). Object-level access to the bucket cannot be reconstructed for audit or incident response.",
       "evidence": "CloudFormation/fn-foreach-s3-outputs.yaml:14 \u2014 Properties.LoggingConfiguration is absent",
       "evidence_file": "CloudFormation/fn-foreach-s3-outputs.yaml",
       "evidence_line": 14,
@@ -46320,7 +46360,7 @@
       "target_date": "TBD \u2014 CAT III: 180 days from Government acceptance of this report",
       "tags": [],
       "risk_score": 105,
-      "risk_rank": 1063,
+      "risk_rank": 1064,
       "hit_key": "",
       "tool_rule_id": "CSA-LOG-001",
       "nist_control_families": [
@@ -46359,7 +46399,7 @@
       "target_date": "TBD \u2014 CAT III: 180 days from Government acceptance of this report",
       "tags": [],
       "risk_score": 105,
-      "risk_rank": 1064,
+      "risk_rank": 1065,
       "hit_key": "",
       "tool_rule_id": "CSA-BKP-002",
       "nist_control_families": [
@@ -46399,7 +46439,7 @@
       "target_date": "TBD \u2014 CAT III: 180 days from Government acceptance of this report",
       "tags": [],
       "risk_score": 105,
-      "risk_rank": 1065,
+      "risk_rank": 1066,
       "hit_key": "",
       "tool_rule_id": "CSA-IAM-006",
       "nist_control_families": [
@@ -46440,7 +46480,7 @@
       "target_date": "TBD \u2014 CAT III: 180 days from Government acceptance of this report",
       "tags": [],
       "risk_score": 105,
-      "risk_rank": 1066,
+      "risk_rank": 1067,
       "hit_key": "",
       "tool_rule_id": "CSA-IAM-007",
       "nist_control_families": [
@@ -46480,7 +46520,7 @@
       "target_date": "TBD \u2014 CAT III: 180 days from Government acceptance of this report",
       "tags": [],
       "risk_score": 105,
-      "risk_rank": 1067,
+      "risk_rank": 1068,
       "hit_key": "",
       "tool_rule_id": "CSA-IAM-006",
       "nist_control_families": [
@@ -46521,7 +46561,7 @@
       "target_date": "TBD \u2014 CAT III: 180 days from Government acceptance of this report",
       "tags": [],
       "risk_score": 105,
-      "risk_rank": 1068,
+      "risk_rank": 1069,
       "hit_key": "",
       "tool_rule_id": "CSA-IAM-007",
       "nist_control_families": [
@@ -46561,7 +46601,7 @@
       "target_date": "TBD \u2014 CAT III: 180 days from Government acceptance of this report",
       "tags": [],
       "risk_score": 105,
-      "risk_rank": 1069,
+      "risk_rank": 1070,
       "hit_key": "",
       "tool_rule_id": "CSA-MON-001",
       "nist_control_families": [
@@ -46601,7 +46641,7 @@
       "target_date": "TBD \u2014 CAT III: 180 days from Government acceptance of this report",
       "tags": [],
       "risk_score": 105,
-      "risk_rank": 1070,
+      "risk_rank": 1071,
       "hit_key": "",
       "tool_rule_id": "CSA-KMS-001",
       "nist_control_families": [
@@ -46640,7 +46680,7 @@
       "target_date": "TBD \u2014 CAT III: 180 days from Government acceptance of this report",
       "tags": [],
       "risk_score": 105,
-      "risk_rank": 1071,
+      "risk_rank": 1072,
       "hit_key": "",
       "tool_rule_id": "CSA-LOG-005",
       "nist_control_families": [
@@ -46680,7 +46720,7 @@
       "target_date": "TBD \u2014 CAT III: 180 days from Government acceptance of this report",
       "tags": [],
       "risk_score": 105,
-      "risk_rank": 1072,
+      "risk_rank": 1073,
       "hit_key": "",
       "tool_rule_id": "CSA-IAM-007",
       "nist_control_families": [
@@ -46721,7 +46761,7 @@
       "target_date": "TBD \u2014 CAT III: 180 days from Government acceptance of this report",
       "tags": [],
       "risk_score": 105,
-      "risk_rank": 1073,
+      "risk_rank": 1074,
       "hit_key": "",
       "tool_rule_id": "CSA-IAM-007",
       "nist_control_families": [
@@ -46761,7 +46801,7 @@
       "target_date": "TBD \u2014 CAT III: 180 days from Government acceptance of this report",
       "tags": [],
       "risk_score": 105,
-      "risk_rank": 1074,
+      "risk_rank": 1075,
       "hit_key": "",
       "tool_rule_id": "CSA-BKP-002",
       "nist_control_families": [
@@ -46801,7 +46841,7 @@
       "target_date": "TBD \u2014 CAT III: 180 days from Government acceptance of this report",
       "tags": [],
       "risk_score": 105,
-      "risk_rank": 1075,
+      "risk_rank": 1076,
       "hit_key": "",
       "tool_rule_id": "CSA-IAM-006",
       "nist_control_families": [
@@ -46842,7 +46882,7 @@
       "target_date": "TBD \u2014 CAT III: 180 days from Government acceptance of this report",
       "tags": [],
       "risk_score": 105,
-      "risk_rank": 1076,
+      "risk_rank": 1077,
       "hit_key": "",
       "tool_rule_id": "CSA-IAM-007",
       "nist_control_families": [
@@ -46882,7 +46922,7 @@
       "target_date": "TBD \u2014 CAT III: 180 days from Government acceptance of this report",
       "tags": [],
       "risk_score": 105,
-      "risk_rank": 1077,
+      "risk_rank": 1078,
       "hit_key": "",
       "tool_rule_id": "CSA-IAM-006",
       "nist_control_families": [
@@ -46923,7 +46963,7 @@
       "target_date": "TBD \u2014 CAT III: 180 days from Government acceptance of this report",
       "tags": [],
       "risk_score": 105,
-      "risk_rank": 1078,
+      "risk_rank": 1079,
       "hit_key": "",
       "tool_rule_id": "CSA-IAM-007",
       "nist_control_families": [
@@ -46963,7 +47003,7 @@
       "target_date": "TBD \u2014 CAT III: 180 days from Government acceptance of this report",
       "tags": [],
       "risk_score": 105,
-      "risk_rank": 1079,
+      "risk_rank": 1080,
       "hit_key": "",
       "tool_rule_id": "CSA-BKP-002",
       "nist_control_families": [
@@ -47003,7 +47043,7 @@
       "target_date": "TBD \u2014 CAT III: 180 days from Government acceptance of this report",
       "tags": [],
       "risk_score": 105,
-      "risk_rank": 1080,
+      "risk_rank": 1081,
       "hit_key": "",
       "tool_rule_id": "CSA-BKP-002",
       "nist_control_families": [
@@ -47044,7 +47084,7 @@
       "target_date": "TBD \u2014 CAT III: 180 days from Government acceptance of this report",
       "tags": [],
       "risk_score": 105,
-      "risk_rank": 1081,
+      "risk_rank": 1082,
       "hit_key": "",
       "tool_rule_id": "CSA-CFG-002",
       "nist_control_families": [
@@ -47083,7 +47123,7 @@
       "target_date": "TBD \u2014 CAT III: 180 days from Government acceptance of this report",
       "tags": [],
       "risk_score": 105,
-      "risk_rank": 1082,
+      "risk_rank": 1083,
       "hit_key": "",
       "tool_rule_id": "CSA-IAM-006",
       "nist_control_families": [
@@ -47124,7 +47164,7 @@
       "target_date": "TBD \u2014 CAT III: 180 days from Government acceptance of this report",
       "tags": [],
       "risk_score": 105,
-      "risk_rank": 1083,
+      "risk_rank": 1084,
       "hit_key": "",
       "tool_rule_id": "CSA-IAM-007",
       "nist_control_families": [
@@ -47164,7 +47204,7 @@
       "target_date": "TBD \u2014 CAT III: 180 days from Government acceptance of this report",
       "tags": [],
       "risk_score": 105,
-      "risk_rank": 1084,
+      "risk_rank": 1085,
       "hit_key": "",
       "tool_rule_id": "CSA-IAM-006",
       "nist_control_families": [
@@ -47205,7 +47245,7 @@
       "target_date": "TBD \u2014 CAT III: 180 days from Government acceptance of this report",
       "tags": [],
       "risk_score": 105,
-      "risk_rank": 1085,
+      "risk_rank": 1086,
       "hit_key": "",
       "tool_rule_id": "CSA-IAM-007",
       "nist_control_families": [
@@ -47245,7 +47285,7 @@
       "target_date": "TBD \u2014 CAT III: 180 days from Government acceptance of this report",
       "tags": [],
       "risk_score": 105,
-      "risk_rank": 1086,
+      "risk_rank": 1087,
       "hit_key": "",
       "tool_rule_id": "CSA-IAM-006",
       "nist_control_families": [
@@ -47286,7 +47326,7 @@
       "target_date": "TBD \u2014 CAT III: 180 days from Government acceptance of this report",
       "tags": [],
       "risk_score": 105,
-      "risk_rank": 1087,
+      "risk_rank": 1088,
       "hit_key": "",
       "tool_rule_id": "CSA-IAM-007",
       "nist_control_families": [
@@ -47327,7 +47367,7 @@
       "target_date": "TBD \u2014 CAT III: 180 days from Government acceptance of this report",
       "tags": [],
       "risk_score": 105,
-      "risk_rank": 1088,
+      "risk_rank": 1089,
       "hit_key": "",
       "tool_rule_id": "CSA-CFG-002",
       "nist_control_families": [
@@ -47366,7 +47406,7 @@
       "target_date": "TBD \u2014 CAT III: 180 days from Government acceptance of this report",
       "tags": [],
       "risk_score": 105,
-      "risk_rank": 1089,
+      "risk_rank": 1090,
       "hit_key": "",
       "tool_rule_id": "CSA-IAM-006",
       "nist_control_families": [
@@ -47407,7 +47447,7 @@
       "target_date": "TBD \u2014 CAT III: 180 days from Government acceptance of this report",
       "tags": [],
       "risk_score": 105,
-      "risk_rank": 1090,
+      "risk_rank": 1091,
       "hit_key": "",
       "tool_rule_id": "CSA-IAM-007",
       "nist_control_families": [
@@ -47447,7 +47487,7 @@
       "target_date": "TBD \u2014 CAT III: 180 days from Government acceptance of this report",
       "tags": [],
       "risk_score": 105,
-      "risk_rank": 1091,
+      "risk_rank": 1092,
       "hit_key": "",
       "tool_rule_id": "CSA-IAM-006",
       "nist_control_families": [
@@ -47488,7 +47528,7 @@
       "target_date": "TBD \u2014 CAT III: 180 days from Government acceptance of this report",
       "tags": [],
       "risk_score": 105,
-      "risk_rank": 1092,
+      "risk_rank": 1093,
       "hit_key": "",
       "tool_rule_id": "CSA-IAM-007",
       "nist_control_families": [
@@ -47528,7 +47568,7 @@
       "target_date": "TBD \u2014 CAT III: 180 days from Government acceptance of this report",
       "tags": [],
       "risk_score": 105,
-      "risk_rank": 1093,
+      "risk_rank": 1094,
       "hit_key": "",
       "tool_rule_id": "CSA-IAM-006",
       "nist_control_families": [
@@ -47569,7 +47609,7 @@
       "target_date": "TBD \u2014 CAT III: 180 days from Government acceptance of this report",
       "tags": [],
       "risk_score": 105,
-      "risk_rank": 1094,
+      "risk_rank": 1095,
       "hit_key": "",
       "tool_rule_id": "CSA-IAM-007",
       "nist_control_families": [
@@ -47609,7 +47649,7 @@
       "target_date": "TBD \u2014 CAT III: 180 days from Government acceptance of this report",
       "tags": [],
       "risk_score": 105,
-      "risk_rank": 1095,
+      "risk_rank": 1096,
       "hit_key": "",
       "tool_rule_id": "CSA-IAM-006",
       "nist_control_families": [
@@ -47650,7 +47690,7 @@
       "target_date": "TBD \u2014 CAT III: 180 days from Government acceptance of this report",
       "tags": [],
       "risk_score": 105,
-      "risk_rank": 1096,
+      "risk_rank": 1097,
       "hit_key": "",
       "tool_rule_id": "CSA-IAM-007",
       "nist_control_families": [
@@ -47690,7 +47730,7 @@
       "target_date": "TBD \u2014 CAT III: 180 days from Government acceptance of this report",
       "tags": [],
       "risk_score": 105,
-      "risk_rank": 1097,
+      "risk_rank": 1098,
       "hit_key": "",
       "tool_rule_id": "CSA-IAM-006",
       "nist_control_families": [
@@ -47731,7 +47771,7 @@
       "target_date": "TBD \u2014 CAT III: 180 days from Government acceptance of this report",
       "tags": [],
       "risk_score": 105,
-      "risk_rank": 1098,
+      "risk_rank": 1099,
       "hit_key": "",
       "tool_rule_id": "CSA-IAM-007",
       "nist_control_families": [
@@ -47771,7 +47811,7 @@
       "target_date": "TBD \u2014 CAT III: 180 days from Government acceptance of this report",
       "tags": [],
       "risk_score": 105,
-      "risk_rank": 1099,
+      "risk_rank": 1100,
       "hit_key": "",
       "tool_rule_id": "CSA-IAM-006",
       "nist_control_families": [
@@ -47812,7 +47852,7 @@
       "target_date": "TBD \u2014 CAT III: 180 days from Government acceptance of this report",
       "tags": [],
       "risk_score": 105,
-      "risk_rank": 1100,
+      "risk_rank": 1101,
       "hit_key": "",
       "tool_rule_id": "CSA-IAM-007",
       "nist_control_families": [
@@ -47852,7 +47892,7 @@
       "target_date": "TBD \u2014 CAT III: 180 days from Government acceptance of this report",
       "tags": [],
       "risk_score": 105,
-      "risk_rank": 1101,
+      "risk_rank": 1102,
       "hit_key": "",
       "tool_rule_id": "CSA-IAM-006",
       "nist_control_families": [
@@ -47893,7 +47933,7 @@
       "target_date": "TBD \u2014 CAT III: 180 days from Government acceptance of this report",
       "tags": [],
       "risk_score": 105,
-      "risk_rank": 1102,
+      "risk_rank": 1103,
       "hit_key": "",
       "tool_rule_id": "CSA-IAM-007",
       "nist_control_families": [
@@ -47933,7 +47973,7 @@
       "target_date": "TBD \u2014 CAT III: 180 days from Government acceptance of this report",
       "tags": [],
       "risk_score": 105,
-      "risk_rank": 1103,
+      "risk_rank": 1104,
       "hit_key": "",
       "tool_rule_id": "CSA-IAM-006",
       "nist_control_families": [
@@ -47974,7 +48014,7 @@
       "target_date": "TBD \u2014 CAT III: 180 days from Government acceptance of this report",
       "tags": [],
       "risk_score": 105,
-      "risk_rank": 1104,
+      "risk_rank": 1105,
       "hit_key": "",
       "tool_rule_id": "CSA-IAM-007",
       "nist_control_families": [
@@ -48014,7 +48054,7 @@
       "target_date": "TBD \u2014 CAT III: 180 days from Government acceptance of this report",
       "tags": [],
       "risk_score": 105,
-      "risk_rank": 1105,
+      "risk_rank": 1106,
       "hit_key": "",
       "tool_rule_id": "CSA-IAM-006",
       "nist_control_families": [
@@ -48055,7 +48095,7 @@
       "target_date": "TBD \u2014 CAT III: 180 days from Government acceptance of this report",
       "tags": [],
       "risk_score": 105,
-      "risk_rank": 1106,
+      "risk_rank": 1107,
       "hit_key": "",
       "tool_rule_id": "CSA-IAM-007",
       "nist_control_families": [
@@ -48095,7 +48135,7 @@
       "target_date": "TBD \u2014 CAT III: 180 days from Government acceptance of this report",
       "tags": [],
       "risk_score": 105,
-      "risk_rank": 1107,
+      "risk_rank": 1108,
       "hit_key": "",
       "tool_rule_id": "CSA-IAM-006",
       "nist_control_families": [
@@ -48136,7 +48176,7 @@
       "target_date": "TBD \u2014 CAT III: 180 days from Government acceptance of this report",
       "tags": [],
       "risk_score": 105,
-      "risk_rank": 1108,
+      "risk_rank": 1109,
       "hit_key": "",
       "tool_rule_id": "CSA-IAM-007",
       "nist_control_families": [
@@ -48176,7 +48216,7 @@
       "target_date": "TBD \u2014 CAT III: 180 days from Government acceptance of this report",
       "tags": [],
       "risk_score": 105,
-      "risk_rank": 1109,
+      "risk_rank": 1110,
       "hit_key": "",
       "tool_rule_id": "CSA-IAM-006",
       "nist_control_families": [
@@ -48217,7 +48257,7 @@
       "target_date": "TBD \u2014 CAT III: 180 days from Government acceptance of this report",
       "tags": [],
       "risk_score": 105,
-      "risk_rank": 1110,
+      "risk_rank": 1111,
       "hit_key": "",
       "tool_rule_id": "CSA-IAM-007",
       "nist_control_families": [
@@ -48257,7 +48297,7 @@
       "target_date": "TBD \u2014 CAT III: 180 days from Government acceptance of this report",
       "tags": [],
       "risk_score": 105,
-      "risk_rank": 1111,
+      "risk_rank": 1112,
       "hit_key": "",
       "tool_rule_id": "CSA-BKP-001",
       "nist_control_families": [
@@ -48296,7 +48336,7 @@
       "target_date": "TBD \u2014 CAT III: 180 days from Government acceptance of this report",
       "tags": [],
       "risk_score": 105,
-      "risk_rank": 1112,
+      "risk_rank": 1113,
       "hit_key": "",
       "tool_rule_id": "CSA-BKP-002",
       "nist_control_families": [
@@ -48336,7 +48376,7 @@
       "target_date": "TBD \u2014 CAT III: 180 days from Government acceptance of this report",
       "tags": [],
       "risk_score": 105,
-      "risk_rank": 1113,
+      "risk_rank": 1114,
       "hit_key": "",
       "tool_rule_id": "CSA-KMS-001",
       "nist_control_families": [
@@ -48375,7 +48415,7 @@
       "target_date": "TBD \u2014 CAT III: 180 days from Government acceptance of this report",
       "tags": [],
       "risk_score": 105,
-      "risk_rank": 1114,
+      "risk_rank": 1115,
       "hit_key": "",
       "tool_rule_id": "CSA-BKP-001",
       "nist_control_families": [
@@ -48414,7 +48454,7 @@
       "target_date": "TBD \u2014 CAT III: 180 days from Government acceptance of this report",
       "tags": [],
       "risk_score": 105,
-      "risk_rank": 1115,
+      "risk_rank": 1116,
       "hit_key": "",
       "tool_rule_id": "CSA-BKP-002",
       "nist_control_families": [
@@ -48454,7 +48494,7 @@
       "target_date": "TBD \u2014 CAT III: 180 days from Government acceptance of this report",
       "tags": [],
       "risk_score": 105,
-      "risk_rank": 1116,
+      "risk_rank": 1117,
       "hit_key": "",
       "tool_rule_id": "CSA-KMS-001",
       "nist_control_families": [
@@ -48493,7 +48533,7 @@
       "target_date": "TBD \u2014 CAT III: 180 days from Government acceptance of this report",
       "tags": [],
       "risk_score": 105,
-      "risk_rank": 1117,
+      "risk_rank": 1118,
       "hit_key": "",
       "tool_rule_id": "CSA-IAM-006",
       "nist_control_families": [
@@ -48534,7 +48574,7 @@
       "target_date": "TBD \u2014 CAT III: 180 days from Government acceptance of this report",
       "tags": [],
       "risk_score": 105,
-      "risk_rank": 1118,
+      "risk_rank": 1119,
       "hit_key": "",
       "tool_rule_id": "CSA-IAM-007",
       "nist_control_families": [
@@ -48575,7 +48615,7 @@
       "target_date": "TBD \u2014 CAT III: 180 days from Government acceptance of this report",
       "tags": [],
       "risk_score": 105,
-      "risk_rank": 1119,
+      "risk_rank": 1120,
       "hit_key": "",
       "tool_rule_id": "CSA-IAM-007",
       "nist_control_families": [
@@ -48616,7 +48656,7 @@
       "target_date": "TBD \u2014 CAT III: 180 days from Government acceptance of this report",
       "tags": [],
       "risk_score": 105,
-      "risk_rank": 1120,
+      "risk_rank": 1121,
       "hit_key": "",
       "tool_rule_id": "CSA-IAM-007",
       "nist_control_families": [
@@ -48657,7 +48697,7 @@
       "target_date": "TBD \u2014 CAT III: 180 days from Government acceptance of this report",
       "tags": [],
       "risk_score": 105,
-      "risk_rank": 1121,
+      "risk_rank": 1122,
       "hit_key": "",
       "tool_rule_id": "CSA-IAM-007",
       "nist_control_families": [
@@ -48698,7 +48738,7 @@
       "target_date": "TBD \u2014 CAT III: 180 days from Government acceptance of this report",
       "tags": [],
       "risk_score": 105,
-      "risk_rank": 1122,
+      "risk_rank": 1123,
       "hit_key": "",
       "tool_rule_id": "CSA-IAM-007",
       "nist_control_families": [
@@ -48739,7 +48779,7 @@
       "target_date": "TBD \u2014 CAT III: 180 days from Government acceptance of this report",
       "tags": [],
       "risk_score": 105,
-      "risk_rank": 1123,
+      "risk_rank": 1124,
       "hit_key": "",
       "tool_rule_id": "CSA-IAM-007",
       "nist_control_families": [
@@ -48780,7 +48820,7 @@
       "target_date": "TBD \u2014 CAT III: 180 days from Government acceptance of this report",
       "tags": [],
       "risk_score": 105,
-      "risk_rank": 1124,
+      "risk_rank": 1125,
       "hit_key": "",
       "tool_rule_id": "CSA-IAM-007",
       "nist_control_families": [
@@ -48820,7 +48860,7 @@
       "target_date": "TBD \u2014 CAT III: 180 days from Government acceptance of this report",
       "tags": [],
       "risk_score": 105,
-      "risk_rank": 1125,
+      "risk_rank": 1126,
       "hit_key": "",
       "tool_rule_id": "CSA-MON-001",
       "nist_control_families": [
@@ -48860,7 +48900,7 @@
       "target_date": "TBD \u2014 CAT III: 180 days from Government acceptance of this report",
       "tags": [],
       "risk_score": 105,
-      "risk_rank": 1126,
+      "risk_rank": 1127,
       "hit_key": "",
       "tool_rule_id": "CSA-IAM-006",
       "nist_control_families": [
@@ -48901,7 +48941,7 @@
       "target_date": "TBD \u2014 CAT III: 180 days from Government acceptance of this report",
       "tags": [],
       "risk_score": 105,
-      "risk_rank": 1127,
+      "risk_rank": 1128,
       "hit_key": "",
       "tool_rule_id": "CSA-IAM-007",
       "nist_control_families": [
@@ -48941,7 +48981,7 @@
       "target_date": "TBD \u2014 CAT III: 180 days from Government acceptance of this report",
       "tags": [],
       "risk_score": 105,
-      "risk_rank": 1128,
+      "risk_rank": 1129,
       "hit_key": "",
       "tool_rule_id": "CSA-IAM-006",
       "nist_control_families": [
@@ -48982,7 +49022,7 @@
       "target_date": "TBD \u2014 CAT III: 180 days from Government acceptance of this report",
       "tags": [],
       "risk_score": 105,
-      "risk_rank": 1129,
+      "risk_rank": 1130,
       "hit_key": "",
       "tool_rule_id": "CSA-IAM-007",
       "nist_control_families": [
@@ -49022,7 +49062,7 @@
       "target_date": "TBD \u2014 CAT III: 180 days from Government acceptance of this report",
       "tags": [],
       "risk_score": 105,
-      "risk_rank": 1130,
+      "risk_rank": 1131,
       "hit_key": "",
       "tool_rule_id": "CSA-MON-001",
       "nist_control_families": [
@@ -49062,7 +49102,7 @@
       "target_date": "TBD \u2014 CAT III: 180 days from Government acceptance of this report",
       "tags": [],
       "risk_score": 105,
-      "risk_rank": 1131,
+      "risk_rank": 1132,
       "hit_key": "",
       "tool_rule_id": "CSA-MON-001",
       "nist_control_families": [
@@ -49102,7 +49142,7 @@
       "target_date": "TBD \u2014 CAT III: 180 days from Government acceptance of this report",
       "tags": [],
       "risk_score": 105,
-      "risk_rank": 1132,
+      "risk_rank": 1133,
       "hit_key": "",
       "tool_rule_id": "CSA-IAM-006",
       "nist_control_families": [
@@ -49143,7 +49183,7 @@
       "target_date": "TBD \u2014 CAT III: 180 days from Government acceptance of this report",
       "tags": [],
       "risk_score": 105,
-      "risk_rank": 1133,
+      "risk_rank": 1134,
       "hit_key": "",
       "tool_rule_id": "CSA-IAM-007",
       "nist_control_families": [
@@ -49183,7 +49223,7 @@
       "target_date": "TBD \u2014 CAT III: 180 days from Government acceptance of this report",
       "tags": [],
       "risk_score": 105,
-      "risk_rank": 1134,
+      "risk_rank": 1135,
       "hit_key": "",
       "tool_rule_id": "CSA-MON-001",
       "nist_control_families": [
@@ -49223,7 +49263,7 @@
       "target_date": "TBD \u2014 CAT III: 180 days from Government acceptance of this report",
       "tags": [],
       "risk_score": 105,
-      "risk_rank": 1135,
+      "risk_rank": 1136,
       "hit_key": "",
       "tool_rule_id": "CSA-MON-001",
       "nist_control_families": [
@@ -49263,7 +49303,7 @@
       "target_date": "TBD \u2014 CAT III: 180 days from Government acceptance of this report",
       "tags": [],
       "risk_score": 105,
-      "risk_rank": 1136,
+      "risk_rank": 1137,
       "hit_key": "",
       "tool_rule_id": "CSA-IAM-006",
       "nist_control_families": [
@@ -49304,7 +49344,7 @@
       "target_date": "TBD \u2014 CAT III: 180 days from Government acceptance of this report",
       "tags": [],
       "risk_score": 105,
-      "risk_rank": 1137,
+      "risk_rank": 1138,
       "hit_key": "",
       "tool_rule_id": "CSA-IAM-007",
       "nist_control_families": [
@@ -49344,7 +49384,7 @@
       "target_date": "TBD \u2014 CAT III: 180 days from Government acceptance of this report",
       "tags": [],
       "risk_score": 105,
-      "risk_rank": 1138,
+      "risk_rank": 1139,
       "hit_key": "",
       "tool_rule_id": "CSA-MON-001",
       "nist_control_families": [
@@ -49384,7 +49424,7 @@
       "target_date": "TBD \u2014 CAT III: 180 days from Government acceptance of this report",
       "tags": [],
       "risk_score": 105,
-      "risk_rank": 1139,
+      "risk_rank": 1140,
       "hit_key": "",
       "tool_rule_id": "CSA-MON-001",
       "nist_control_families": [
@@ -49424,7 +49464,7 @@
       "target_date": "TBD \u2014 CAT III: 180 days from Government acceptance of this report",
       "tags": [],
       "risk_score": 105,
-      "risk_rank": 1140,
+      "risk_rank": 1141,
       "hit_key": "",
       "tool_rule_id": "CSA-IAM-006",
       "nist_control_families": [
@@ -49465,7 +49505,7 @@
       "target_date": "TBD \u2014 CAT III: 180 days from Government acceptance of this report",
       "tags": [],
       "risk_score": 105,
-      "risk_rank": 1141,
+      "risk_rank": 1142,
       "hit_key": "",
       "tool_rule_id": "CSA-IAM-007",
       "nist_control_families": [
@@ -49505,7 +49545,7 @@
       "target_date": "TBD \u2014 CAT III: 180 days from Government acceptance of this report",
       "tags": [],
       "risk_score": 105,
-      "risk_rank": 1142,
+      "risk_rank": 1143,
       "hit_key": "",
       "tool_rule_id": "CSA-MON-001",
       "nist_control_families": [
@@ -49545,7 +49585,7 @@
       "target_date": "TBD \u2014 CAT III: 180 days from Government acceptance of this report",
       "tags": [],
       "risk_score": 105,
-      "risk_rank": 1143,
+      "risk_rank": 1144,
       "hit_key": "",
       "tool_rule_id": "CSA-MON-001",
       "nist_control_families": [
@@ -49585,7 +49625,7 @@
       "target_date": "TBD \u2014 CAT III: 180 days from Government acceptance of this report",
       "tags": [],
       "risk_score": 105,
-      "risk_rank": 1144,
+      "risk_rank": 1145,
       "hit_key": "",
       "tool_rule_id": "CSA-IAM-006",
       "nist_control_families": [
@@ -49626,7 +49666,7 @@
       "target_date": "TBD \u2014 CAT III: 180 days from Government acceptance of this report",
       "tags": [],
       "risk_score": 105,
-      "risk_rank": 1145,
+      "risk_rank": 1146,
       "hit_key": "",
       "tool_rule_id": "CSA-IAM-007",
       "nist_control_families": [
@@ -49666,7 +49706,7 @@
       "target_date": "TBD \u2014 CAT III: 180 days from Government acceptance of this report",
       "tags": [],
       "risk_score": 105,
-      "risk_rank": 1146,
+      "risk_rank": 1147,
       "hit_key": "",
       "tool_rule_id": "CSA-MON-001",
       "nist_control_families": [
@@ -49706,7 +49746,7 @@
       "target_date": "TBD \u2014 CAT III: 180 days from Government acceptance of this report",
       "tags": [],
       "risk_score": 105,
-      "risk_rank": 1147,
+      "risk_rank": 1148,
       "hit_key": "",
       "tool_rule_id": "CSA-IAM-006",
       "nist_control_families": [
@@ -49747,7 +49787,7 @@
       "target_date": "TBD \u2014 CAT III: 180 days from Government acceptance of this report",
       "tags": [],
       "risk_score": 105,
-      "risk_rank": 1148,
+      "risk_rank": 1149,
       "hit_key": "",
       "tool_rule_id": "CSA-IAM-007",
       "nist_control_families": [
@@ -49787,7 +49827,7 @@
       "target_date": "TBD \u2014 CAT III: 180 days from Government acceptance of this report",
       "tags": [],
       "risk_score": 105,
-      "risk_rank": 1149,
+      "risk_rank": 1150,
       "hit_key": "",
       "tool_rule_id": "CSA-MON-001",
       "nist_control_families": [
@@ -49828,7 +49868,7 @@
       "target_date": "TBD \u2014 CAT III: 180 days from Government acceptance of this report",
       "tags": [],
       "risk_score": 105,
-      "risk_rank": 1150,
+      "risk_rank": 1151,
       "hit_key": "",
       "tool_rule_id": "CSA-IAM-007",
       "nist_control_families": [
@@ -49869,7 +49909,7 @@
       "target_date": "TBD \u2014 CAT III: 180 days from Government acceptance of this report",
       "tags": [],
       "risk_score": 105,
-      "risk_rank": 1151,
+      "risk_rank": 1152,
       "hit_key": "",
       "tool_rule_id": "CSA-IAM-007",
       "nist_control_families": [
@@ -49909,7 +49949,7 @@
       "target_date": "TBD \u2014 CAT III: 180 days from Government acceptance of this report",
       "tags": [],
       "risk_score": 105,
-      "risk_rank": 1152,
+      "risk_rank": 1153,
       "hit_key": "",
       "tool_rule_id": "CSA-MON-001",
       "nist_control_families": [
@@ -49950,7 +49990,7 @@
       "target_date": "TBD \u2014 CAT III: 180 days from Government acceptance of this report",
       "tags": [],
       "risk_score": 105,
-      "risk_rank": 1153,
+      "risk_rank": 1154,
       "hit_key": "",
       "tool_rule_id": "CSA-IAM-007",
       "nist_control_families": [
@@ -49990,7 +50030,7 @@
       "target_date": "TBD \u2014 CAT III: 180 days from Government acceptance of this report",
       "tags": [],
       "risk_score": 105,
-      "risk_rank": 1154,
+      "risk_rank": 1155,
       "hit_key": "",
       "tool_rule_id": "CSA-BKP-002",
       "nist_control_families": [
@@ -50030,7 +50070,7 @@
       "target_date": "TBD \u2014 CAT III: 180 days from Government acceptance of this report",
       "tags": [],
       "risk_score": 105,
-      "risk_rank": 1155,
+      "risk_rank": 1156,
       "hit_key": "",
       "tool_rule_id": "CSA-BKP-002",
       "nist_control_families": [
@@ -50045,7 +50085,7 @@
       "resource_logical_id": "LogBucket",
       "resource_type": "AWS::S3::Bucket",
       "title": "S3 bucket has no server access logging",
-      "description": "LoggingConfiguration is absent. Object-level access to the bucket cannot be reconstructed for audit or incident response.",
+      "description": "LoggingConfiguration is absent or names no DestinationBucketName (an empty block disables logging). Object-level access to the bucket cannot be reconstructed for audit or incident response.",
       "evidence": "RainModules/bucket.yml:26 \u2014 Properties.LoggingConfiguration is absent",
       "evidence_file": "RainModules/bucket.yml",
       "evidence_line": 26,
@@ -50070,7 +50110,7 @@
       "target_date": "TBD \u2014 CAT III: 180 days from Government acceptance of this report",
       "tags": [],
       "risk_score": 105,
-      "risk_rank": 1156,
+      "risk_rank": 1157,
       "hit_key": "",
       "tool_rule_id": "CSA-LOG-001",
       "nist_control_families": [
@@ -50109,7 +50149,7 @@
       "target_date": "TBD \u2014 CAT III: 180 days from Government acceptance of this report",
       "tags": [],
       "risk_score": 105,
-      "risk_rank": 1157,
+      "risk_rank": 1158,
       "hit_key": "",
       "tool_rule_id": "CSA-BKP-002",
       "nist_control_families": [
@@ -50124,7 +50164,7 @@
       "resource_logical_id": "ReplicaBucket",
       "resource_type": "AWS::S3::Bucket",
       "title": "S3 bucket has no server access logging",
-      "description": "LoggingConfiguration is absent. Object-level access to the bucket cannot be reconstructed for audit or incident response.",
+      "description": "LoggingConfiguration is absent or names no DestinationBucketName (an empty block disables logging). Object-level access to the bucket cannot be reconstructed for audit or incident response.",
       "evidence": "RainModules/bucket.yml:105 \u2014 Properties.LoggingConfiguration is absent",
       "evidence_file": "RainModules/bucket.yml",
       "evidence_line": 105,
@@ -50149,7 +50189,7 @@
       "target_date": "TBD \u2014 CAT III: 180 days from Government acceptance of this report",
       "tags": [],
       "risk_score": 105,
-      "risk_rank": 1158,
+      "risk_rank": 1159,
       "hit_key": "",
       "tool_rule_id": "CSA-LOG-001",
       "nist_control_families": [
@@ -50189,7 +50229,7 @@
       "target_date": "TBD \u2014 CAT III: 180 days from Government acceptance of this report",
       "tags": [],
       "risk_score": 105,
-      "risk_rank": 1159,
+      "risk_rank": 1160,
       "hit_key": "",
       "tool_rule_id": "CSA-IAM-007",
       "nist_control_families": [
@@ -50198,7 +50238,7 @@
       ]
     },
     {
-      "finding_id": "E3031-E7E3A2",
+      "finding_id": "E3031-E7E3A2-5340",
       "template_path": "Solutions/ADConnector/templates/ADCONNECTOR.cfn.yaml",
       "service_directory": "Solutions",
       "resource_logical_id": "ADConnectorLambdaFunction",
@@ -50231,7 +50271,7 @@
       "target_date": "TBD \u2014 CAT III: 180 days from Government acceptance of this report",
       "tags": [],
       "risk_score": 103,
-      "risk_rank": 1160,
+      "risk_rank": 1161,
       "hit_key": "",
       "tool_rule_id": "E3031",
       "nist_control_families": [
@@ -50239,7 +50279,48 @@
       ]
     },
     {
-      "finding_id": "E1157-BA35AB",
+      "finding_id": "E3031-E7E3A2-D21D",
+      "template_path": "Solutions/ADConnector/templates/ADCONNECTOR.cfn.yaml",
+      "service_directory": "Solutions",
+      "resource_logical_id": "ADConnectorLambdaFunction",
+      "resource_type": "AWS::Lambda::Function",
+      "title": "Template does not pass cfn-lint (E3031)",
+      "description": "cfn-lint reports an error-level rule violation. A template that does not validate cannot be relied on as a configuration baseline and may fail or deploy unintended settings. Message: 'PrivateSubnet2ID' does not match '^subnet-[0-9a-z]*$'",
+      "evidence": "Solutions/ADConnector/templates/ADCONNECTOR.cfn.yaml:348 \u2014 Check if property values adhere to a specific pattern",
+      "evidence_file": "Solutions/ADConnector/templates/ADCONNECTOR.cfn.yaml",
+      "evidence_line": 348,
+      "evidence_snippet": "- PrivateSubnet2ID",
+      "severity": "CAT III",
+      "severity_justification": "Degrades protection measures or defense in depth (DISA CAT III).",
+      "nist_controls": [
+        "CM-2",
+        "CM-6"
+      ],
+      "cis_aws_v3_id": null,
+      "dod_cloud_srg_area": "Security Requirements \u2014 Configuration management (CM-2/CM-6 baseline configuration)",
+      "source": "cfn-lint",
+      "custom_rule_id": null,
+      "checkov_ids": [],
+      "cfn_nag_ids": [],
+      "cfn_lint_ids": [
+        "E3031"
+      ],
+      "recommended_remediation": "Correct the template so `cfn-lint` passes with the repository .cfnlintrc; add the check to the CI gate.",
+      "disposition": "Open",
+      "disposition_note": "",
+      "owner": "Cloud Platform Engineering",
+      "target_date": "TBD \u2014 CAT III: 180 days from Government acceptance of this report",
+      "tags": [],
+      "risk_score": 103,
+      "risk_rank": 1162,
+      "hit_key": "",
+      "tool_rule_id": "E3031",
+      "nist_control_families": [
+        "Configuration Management"
+      ]
+    },
+    {
+      "finding_id": "E1157-BA35AB-6F17",
       "template_path": "Solutions/DirectoryServiceSettings/templates/DIRECTORY_SETTINGS.cfn.yaml",
       "service_directory": "Solutions",
       "resource_logical_id": "DirectoryMonitoringTopic",
@@ -50272,7 +50353,7 @@
       "target_date": "TBD \u2014 CAT III: 180 days from Government acceptance of this report",
       "tags": [],
       "risk_score": 103,
-      "risk_rank": 1161,
+      "risk_rank": 1163,
       "hit_key": "",
       "tool_rule_id": "E1157",
       "nist_control_families": [
@@ -50280,7 +50361,7 @@
       ]
     },
     {
-      "finding_id": "E1162-4EFEFF",
+      "finding_id": "E1162-4EFEFF-6F17",
       "template_path": "Solutions/DirectoryServiceSettings/templates/DIRECTORY_SETTINGS.cfn.yaml",
       "service_directory": "Solutions",
       "resource_logical_id": "DirectoryMonitoringTopic",
@@ -50313,7 +50394,7 @@
       "target_date": "TBD \u2014 CAT III: 180 days from Government acceptance of this report",
       "tags": [],
       "risk_score": 103,
-      "risk_rank": 1162,
+      "risk_rank": 1164,
       "hit_key": "",
       "tool_rule_id": "E1162",
       "nist_control_families": [
@@ -50321,7 +50402,7 @@
       ]
     },
     {
-      "finding_id": "E1164-A65634",
+      "finding_id": "E1164-A65634-6F17",
       "template_path": "Solutions/DirectoryServiceSettings/templates/DIRECTORY_SETTINGS.cfn.yaml",
       "service_directory": "Solutions",
       "resource_logical_id": "DirectoryMonitoringTopic",
@@ -50354,7 +50435,7 @@
       "target_date": "TBD \u2014 CAT III: 180 days from Government acceptance of this report",
       "tags": [],
       "risk_score": 103,
-      "risk_rank": 1163,
+      "risk_rank": 1165,
       "hit_key": "",
       "tool_rule_id": "E1164",
       "nist_control_families": [
@@ -50362,7 +50443,7 @@
       ]
     },
     {
-      "finding_id": "E3017-AA2F63",
+      "finding_id": "E3017-AA2F63-6F17",
       "template_path": "Solutions/DirectoryServiceSettings/templates/DIRECTORY_SETTINGS.cfn.yaml",
       "service_directory": "Solutions",
       "resource_logical_id": "DirectoryMonitoringTopic",
@@ -50395,7 +50476,7 @@
       "target_date": "TBD \u2014 CAT III: 180 days from Government acceptance of this report",
       "tags": [],
       "risk_score": 103,
-      "risk_rank": 1164,
+      "risk_rank": 1166,
       "hit_key": "",
       "tool_rule_id": "E3017",
       "nist_control_families": [
@@ -50403,7 +50484,7 @@
       ]
     },
     {
-      "finding_id": "E1041-C9BB9A",
+      "finding_id": "E1041-C9BB9A-26EA",
       "template_path": "AutoScaling/AutoScalingRollingUpdates.yaml",
       "service_directory": "AutoScaling",
       "resource_logical_id": "LaunchTemplate",
@@ -50436,7 +50517,7 @@
       "target_date": "TBD \u2014 CAT III: 180 days from Government acceptance of this report",
       "tags": [],
       "risk_score": 100,
-      "risk_rank": 1165,
+      "risk_rank": 1167,
       "hit_key": "",
       "tool_rule_id": "E1041",
       "nist_control_families": [
@@ -50444,7 +50525,7 @@
       ]
     },
     {
-      "finding_id": "E1041-953133",
+      "finding_id": "E1041-953133-26EA",
       "template_path": "AutoScaling/AutoScalingScheduledAction.yaml",
       "service_directory": "AutoScaling",
       "resource_logical_id": "LaunchTemplate",
@@ -50477,7 +50558,7 @@
       "target_date": "TBD \u2014 CAT III: 180 days from Government acceptance of this report",
       "tags": [],
       "risk_score": 100,
-      "risk_rank": 1166,
+      "risk_rank": 1168,
       "hit_key": "",
       "tool_rule_id": "E1041",
       "nist_control_families": [
@@ -50485,7 +50566,7 @@
       ]
     },
     {
-      "finding_id": "E3002-8486D6",
+      "finding_id": "E3002-8486D6-4521",
       "template_path": "ECS/ECS_Schedule_Example.yaml",
       "service_directory": "ECS",
       "resource_logical_id": "EcsSecurityGroupSSHinbound",
@@ -50518,7 +50599,7 @@
       "target_date": "TBD \u2014 CAT III: 180 days from Government acceptance of this report",
       "tags": [],
       "risk_score": 100,
-      "risk_rank": 1167,
+      "risk_rank": 1169,
       "hit_key": "",
       "tool_rule_id": "E3002",
       "nist_control_families": [
@@ -50526,7 +50607,7 @@
       ]
     },
     {
-      "finding_id": "E1040-36654C",
+      "finding_id": "E1040-36654C-C715",
       "template_path": "ElasticLoadBalancing/ELBWithLockedDownAutoScaledInstances.yaml",
       "service_directory": "ElasticLoadBalancing",
       "resource_logical_id": "InstanceSecurityGroup",
@@ -50559,7 +50640,7 @@
       "target_date": "TBD \u2014 CAT III: 180 days from Government acceptance of this report",
       "tags": [],
       "risk_score": 100,
-      "risk_rank": 1168,
+      "risk_rank": 1170,
       "hit_key": "",
       "tool_rule_id": "E1040",
       "nist_control_families": [
@@ -50567,7 +50648,7 @@
       ]
     },
     {
-      "finding_id": "E3710-765FD9",
+      "finding_id": "E3710-765FD9-BC6C",
       "template_path": "IoT/iotanalytics.yaml",
       "service_directory": "IoT",
       "resource_logical_id": "Channel",
@@ -50600,7 +50681,7 @@
       "target_date": "TBD \u2014 CAT III: 180 days from Government acceptance of this report",
       "tags": [],
       "risk_score": 100,
-      "risk_rank": 1169,
+      "risk_rank": 1171,
       "hit_key": "",
       "tool_rule_id": "E3710",
       "nist_control_families": [
@@ -50608,7 +50689,7 @@
       ]
     },
     {
-      "finding_id": "E3710-26C6E2",
+      "finding_id": "E3710-26C6E2-BC6C",
       "template_path": "IoT/iotanalytics.yaml",
       "service_directory": "IoT",
       "resource_logical_id": "Datastore",
@@ -50641,7 +50722,7 @@
       "target_date": "TBD \u2014 CAT III: 180 days from Government acceptance of this report",
       "tags": [],
       "risk_score": 100,
-      "risk_rank": 1170,
+      "risk_rank": 1172,
       "hit_key": "",
       "tool_rule_id": "E3710",
       "nist_control_families": [
@@ -50649,7 +50730,7 @@
       ]
     },
     {
-      "finding_id": "E3710-2515CF",
+      "finding_id": "E3710-2515CF-BC6C",
       "template_path": "IoT/iotanalytics.yaml",
       "service_directory": "IoT",
       "resource_logical_id": "Pipeline",
@@ -50682,7 +50763,7 @@
       "target_date": "TBD \u2014 CAT III: 180 days from Government acceptance of this report",
       "tags": [],
       "risk_score": 100,
-      "risk_rank": 1171,
+      "risk_rank": 1173,
       "hit_key": "",
       "tool_rule_id": "E3710",
       "nist_control_families": [
@@ -50690,7 +50771,7 @@
       ]
     },
     {
-      "finding_id": "E3710-03E483",
+      "finding_id": "E3710-03E483-BC6C",
       "template_path": "IoT/iotanalytics.yaml",
       "service_directory": "IoT",
       "resource_logical_id": "SqlDataset",
@@ -50723,7 +50804,7 @@
       "target_date": "TBD \u2014 CAT III: 180 days from Government acceptance of this report",
       "tags": [],
       "risk_score": 100,
-      "risk_rank": 1172,
+      "risk_rank": 1174,
       "hit_key": "",
       "tool_rule_id": "E3710",
       "nist_control_families": [
@@ -50769,7 +50850,7 @@
         "exposure"
       ],
       "risk_score": 165,
-      "risk_rank": 1173,
+      "risk_rank": 1175,
       "hit_key": "0.0.0.0/0|80-80/tcp",
       "tool_rule_id": "CSA-NET-004; CKV_AWS_260; W9; W2",
       "nist_control_families": [
@@ -50812,7 +50893,7 @@
         "exposure"
       ],
       "risk_score": 158,
-      "risk_rank": 1174,
+      "risk_rank": 1176,
       "hit_key": "0.0.0.0/0|80-80/tcp",
       "tool_rule_id": "CSA-NET-004; CKV_AWS_260",
       "nist_control_families": [
@@ -50856,7 +50937,7 @@
         "exposure"
       ],
       "risk_score": 158,
-      "risk_rank": 1175,
+      "risk_rank": 1177,
       "hit_key": "0.0.0.0/0|443-443/tcp",
       "tool_rule_id": "CSA-NET-004; W9; W2",
       "nist_control_families": [
@@ -50900,7 +50981,7 @@
         "exposure"
       ],
       "risk_score": 158,
-      "risk_rank": 1176,
+      "risk_rank": 1178,
       "hit_key": "0.0.0.0/0|443-443/tcp",
       "tool_rule_id": "CSA-NET-004; W9; W2",
       "nist_control_families": [
@@ -50944,7 +51025,7 @@
         "exposure"
       ],
       "risk_score": 158,
-      "risk_rank": 1177,
+      "risk_rank": 1179,
       "hit_key": "0.0.0.0/0|443-443/tcp",
       "tool_rule_id": "CSA-NET-004; W9; W2",
       "nist_control_families": [
@@ -50988,7 +51069,7 @@
         "exposure"
       ],
       "risk_score": 158,
-      "risk_rank": 1178,
+      "risk_rank": 1180,
       "hit_key": "0.0.0.0/0|443-443/tcp",
       "tool_rule_id": "CSA-NET-004; W9; W2",
       "nist_control_families": [
@@ -51031,7 +51112,7 @@
         "exposure"
       ],
       "risk_score": 158,
-      "risk_rank": 1179,
+      "risk_rank": 1181,
       "hit_key": "0.0.0.0/0|80-80/tcp",
       "tool_rule_id": "CSA-NET-004; CKV_AWS_260",
       "nist_control_families": [
@@ -51075,7 +51156,7 @@
         "exposure"
       ],
       "risk_score": 155,
-      "risk_rank": 1180,
+      "risk_rank": 1182,
       "hit_key": "0.0.0.0/0|443-443/tcp",
       "tool_rule_id": "CSA-NET-004; W9; W2",
       "nist_control_families": [
@@ -51118,7 +51199,7 @@
         "exposure"
       ],
       "risk_score": 155,
-      "risk_rank": 1181,
+      "risk_rank": 1183,
       "hit_key": "0.0.0.0/0|80-80/tcp",
       "tool_rule_id": "CSA-NET-004; CKV_AWS_260",
       "nist_control_families": [
@@ -51161,7 +51242,7 @@
         "exposure"
       ],
       "risk_score": 155,
-      "risk_rank": 1182,
+      "risk_rank": 1184,
       "hit_key": "0.0.0.0/0|80-80/tcp",
       "tool_rule_id": "CSA-NET-004; CKV_AWS_260",
       "nist_control_families": [
@@ -51204,7 +51285,7 @@
         "exposure"
       ],
       "risk_score": 155,
-      "risk_rank": 1183,
+      "risk_rank": 1185,
       "hit_key": "0.0.0.0/0|80-80/tcp",
       "tool_rule_id": "CSA-NET-004; CKV_AWS_260",
       "nist_control_families": [
@@ -51247,7 +51328,7 @@
         "exposure"
       ],
       "risk_score": 155,
-      "risk_rank": 1184,
+      "risk_rank": 1186,
       "hit_key": "0.0.0.0/0|80-80/tcp",
       "tool_rule_id": "CSA-NET-004; CKV_AWS_260",
       "nist_control_families": [
@@ -51290,7 +51371,7 @@
         "exposure"
       ],
       "risk_score": 155,
-      "risk_rank": 1185,
+      "risk_rank": 1187,
       "hit_key": "0.0.0.0/0|80-80/tcp",
       "tool_rule_id": "CSA-NET-004; CKV_AWS_260",
       "nist_control_families": [
@@ -51333,7 +51414,7 @@
         "exposure"
       ],
       "risk_score": 155,
-      "risk_rank": 1186,
+      "risk_rank": 1188,
       "hit_key": "0.0.0.0/0|80-80/tcp",
       "tool_rule_id": "CSA-NET-004; CKV_AWS_260",
       "nist_control_families": [
@@ -51377,7 +51458,7 @@
         "exposure"
       ],
       "risk_score": 155,
-      "risk_rank": 1187,
+      "risk_rank": 1189,
       "hit_key": "0.0.0.0/0|443-443/tcp",
       "tool_rule_id": "CSA-NET-004; W9; W2",
       "nist_control_families": [
@@ -51418,7 +51499,7 @@
         "exposure"
       ],
       "risk_score": 148,
-      "risk_rank": 1188,
+      "risk_rank": 1190,
       "hit_key": "0.0.0.0/0|443-443/tcp",
       "tool_rule_id": "CSA-NET-004",
       "nist_control_families": [
@@ -51459,7 +51540,7 @@
         "exposure"
       ],
       "risk_score": 148,
-      "risk_rank": 1189,
+      "risk_rank": 1191,
       "hit_key": "0.0.0.0/0|443-443/tcp",
       "tool_rule_id": "CSA-NET-004",
       "nist_control_families": [
@@ -51500,7 +51581,7 @@
         "exposure"
       ],
       "risk_score": 145,
-      "risk_rank": 1190,
+      "risk_rank": 1192,
       "hit_key": "0.0.0.0/0|443-443/tcp",
       "tool_rule_id": "CSA-NET-004",
       "nist_control_families": [
