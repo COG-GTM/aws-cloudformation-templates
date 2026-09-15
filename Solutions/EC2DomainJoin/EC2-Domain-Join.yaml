@@ -19,6 +19,12 @@ Parameters:
     Description: VPC to place instance in
     Type: AWS::EC2::VPC::Id
 
+  RdpIngressCidr:
+    Description: Administrative IP range (CIDR notation) permitted to reach the instance on TCP/3389. Supply the Government-approved administrative range; a /0 prefix is rejected.
+    Type: String
+    AllowedPattern: ^(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)(\.(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)){3}/([1-9]|[12]\d|3[0-2])$
+    ConstraintDescription: must be a valid IPv4 CIDR (each octet 0-255) with a prefix length between /1 and /32 (0.0.0.0/0 is not permitted)
+
   InstanceType:
     Type: String
     AllowedValues:
@@ -131,6 +137,9 @@ Resources:
       KeyName: !Ref KeyPair
       ImageId: !Ref AMI
       InstanceType: !Ref InstanceType
+      MetadataOptions:
+        HttpTokens: required
+        HttpEndpoint: enabled
       Tags:
         - Key: Name
           Value: myEC2InstanceSSM
@@ -170,4 +179,5 @@ Resources:
         - IpProtocol: tcp
           FromPort: "3389"
           ToPort: "3389"
-          CidrIp: 0.0.0.0/0
+          CidrIp: !Ref RdpIngressCidr
+          Description: RDP from the Government administrative range only

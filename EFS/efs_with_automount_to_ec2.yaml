@@ -94,6 +94,12 @@ Parameters:
     Description: VPC ID for EC2 and Elastic Load Balancer
     Type: AWS::EC2::VPC::Id
 
+  SshIngressCidr:
+    Description: Administrative IP range (CIDR notation) permitted to reach the instances on TCP/22. Supply the Government-approved administrative range; a /0 prefix is rejected.
+    Type: String
+    AllowedPattern: ^(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)(\.(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)){3}/([1-9]|[12]\d|3[0-2])$
+    ConstraintDescription: must be a valid IPv4 CIDR (each octet 0-255) with a prefix length between /1 and /32 (0.0.0.0/0 is not permitted)
+
 Mappings:
   EC2RegionMap:
     ap-northeast-1:
@@ -308,13 +314,15 @@ Resources:
   InstanceSecurityGroup:
     Type: AWS::EC2::SecurityGroup
     Properties:
-      GroupDescription: Enable SSH public access and HTTP from the load balancer only
+      GroupDescription: Enable SSH from the administrative range and HTTP from the load balancer only
       SecurityGroupIngress:
-        - CidrIp: 0.0.0.0/0
+        - CidrIp: !Ref SshIngressCidr
+          Description: SSH from the Government administrative range only
           FromPort: "22"
           IpProtocol: tcp
           ToPort: "22"
-        - FromPort: "80"
+        - Description: HTTP from the load balancer security group
+          FromPort: "80"
           IpProtocol: tcp
           SourceSecurityGroupId: !GetAtt ELBSecurityGroup.GroupId
           ToPort: "80"
@@ -356,6 +364,8 @@ Resources:
         - "64"
       InstanceType: !Ref InstanceType
       KeyName: !Ref KeyName
+      MetadataOptions:
+        HttpTokens: required
       SecurityGroups:
         - !GetAtt InstanceSecurityGroup.GroupId
       UserData: !Base64

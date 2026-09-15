@@ -156,13 +156,13 @@
             "Default": 120000
         },
         "StorageEncrypted": {
-            "Description": "Data-at-rest encryption",
+            "Description": "Data-at-rest encryption (enabled by default; encryption cannot be changed after the cluster is created)",
             "Type": "String",
             "AllowedValues": [
                 true,
                 false
             ],
-            "Default": false
+            "Default": true
         },
         "NeptuneDBSubnetGroupName": {
             "Description": "The name for the DB Subnet Group. This value is stored as a lowercase string. Constraints, Must contain no more than 255 letters, numbers, periods, underscores, spaces, or hyphens. Must not be default.",
@@ -336,6 +336,17 @@
                 },
                 "StorageEncrypted": {
                     "Ref": "StorageEncrypted"
+                },
+                "EnableCloudwatchLogsExports": {
+                    "Fn::If": [
+                        "EnableAuditLogUpload",
+                        [
+                            "audit"
+                        ],
+                        {
+                            "Ref": "AWS::NoValue"
+                        }
+                    ]
                 },
                 "VpcSecurityGroupIds": [
                     {
@@ -701,11 +712,83 @@
                 ]
             }
         },
+        "NeptuneAlarmTopicKey": {
+            "Type": "AWS::KMS::Key",
+            "Properties": {
+                "Description": {
+                    "Fn::Sub": "${AWS::StackName} Neptune alarm topic encryption key"
+                },
+                "EnableKeyRotation": true,
+                "KeyPolicy": {
+                    "Version": "2012-10-17",
+                    "Statement": [
+                        {
+                            "Sid": "AllowKeyAdministrationByAccount",
+                            "Effect": "Allow",
+                            "Principal": {
+                                "AWS": {
+                                    "Fn::Sub": "arn:${AWS::Partition}:iam::${AWS::AccountId}:root"
+                                }
+                            },
+                            "Action": "kms:*",
+                            "Resource": "*"
+                        },
+                        {
+                            "Sid": "AllowCloudWatchAlarmsToPublish",
+                            "Effect": "Allow",
+                            "Principal": {
+                                "Service": "cloudwatch.amazonaws.com"
+                            },
+                            "Action": [
+                                "kms:Decrypt",
+                                "kms:GenerateDataKey*"
+                            ],
+                            "Resource": "*",
+                            "Condition": {
+                                "StringEquals": {
+                                    "aws:SourceAccount": {
+                                        "Ref": "AWS::AccountId"
+                                    }
+                                },
+                                "ArnLike": {
+                                    "aws:SourceArn": {
+                                        "Fn::Sub": "arn:${AWS::Partition}:cloudwatch:${AWS::Region}:${AWS::AccountId}:alarm:*"
+                                    }
+                                }
+                            }
+                        },
+                        {
+                            "Sid": "AllowSnsToDeliverMessages",
+                            "Effect": "Allow",
+                            "Principal": {
+                                "Service": "sns.amazonaws.com"
+                            },
+                            "Action": [
+                                "kms:Decrypt",
+                                "kms:GenerateDataKey*"
+                            ],
+                            "Resource": "*",
+                            "Condition": {
+                                "StringEquals": {
+                                    "aws:SourceAccount": {
+                                        "Ref": "AWS::AccountId"
+                                    }
+                                }
+                            }
+                        }
+                    ]
+                }
+            },
+            "Condition": "CreateSnsTopic"
+        },
         "NeptuneAlarmTopic": {
             "Type": "AWS::SNS::Topic",
             "Properties": {
                 "DisplayName": {
                     "Fn::Sub": "${AWS::StackName} alarm topic"
+                },
+                "KmsMasterKeyId": {
+                    "Ref": "NeptuneAlarmTopicKey"
                 }
             },
             "Condition": "CreateSnsTopic"
